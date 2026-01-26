@@ -6,7 +6,7 @@ def print_admin_menu():
     print("[p] Edit Permit Pricing and Types")
     print("[r] Generate Revenue or Occupancy Reports")
     print("[v] View All Records and Violations")
-    print("[q] Quits the Program")
+    print("[q] Quit the Program")
     print("-"*45)
 
 def print_edit_parking_records_menu():
@@ -33,16 +33,8 @@ while True:
             parking_spaces.append(entry)
 
     if choice1 == "e":
-        parking_spaces = []
-        with open("parking_spaces.txt", "r+") as ps:
-            header = ps.readline()
-            for line in ps.readlines():
-                entry = line.strip().split(",")
-                parking_spaces.append(entry)
-
         
-        finish = -1
-        while finish != 1:
+        while True:
             
             print_edit_parking_records_menu()
             currentline = ""
@@ -60,8 +52,7 @@ while True:
             choice2 = input("Enter selection: ")
 
             if choice2 == "b":
-                finish = 1
-
+                break
     elif choice1 == "q":
         print("Exiting Menu...")
         break
