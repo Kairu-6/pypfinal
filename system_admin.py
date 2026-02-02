@@ -101,29 +101,61 @@ def main():
 
                 elif edit_records_option == "a":                                    # Add New Parking Space
                     new_type = -1
-                    while new_type not in parking_space_types:
-                        new_type = input(f"What type of parking? [{"/".join(parking_space_types)}] : ")
+                    while new_type not in parking_space_types and new_type != "q":
+                        new_type = input(f"What type of parking? [{"/".join(parking_space_types)}] (q to cancel): ").strip()
 
-                    existing_ids = []
-                    for space in parking_spaces:
-                        existing_ids.append(get_id_number(space))
-
-                    new_id_num = 1                                                  # Look for least non-existing id
-                    while new_id_num in existing_ids:
-                        new_id_num += 1
-
-                    if len(str(new_id_num)) > 1:                                    # Creation of new id based on id number(one digit or more)
-                        new_id = "S" + str(new_id_num)
-                    else:
-                        new_id = "S0" + str(new_id_num)
-
-                    parking_spaces.append([new_id, new_type, "Available"])
-                    parking_spaces.sort(key=get_id_number)
-
-                    if save_to_file(parking_spaces, "parking_spaces.txt", parking_headers):
+                    if new_type == "q":
                         continue
                     else:
-                        print("error")
+                        existing_ids = []
+                        for space in parking_spaces:
+                            existing_ids.append(get_id_number(space))
+
+                        new_id_num = 1                                                  # Look for least non-existing id
+                        while new_id_num in existing_ids:
+                            new_id_num += 1
+
+                        if len(str(new_id_num)) > 1:                                    # Creation of new id based on id number(one digit or more)
+                            new_id = "S" + str(new_id_num)
+                        else:
+                            new_id = "S0" + str(new_id_num)
+
+                        parking_spaces.append([new_id, new_type, "Available"])
+                        parking_spaces.sort(key=get_id_number)
+
+                        if save_to_file(parking_spaces, "parking_spaces.txt", parking_headers):
+                            continue
+                        else:
+                            print("error")
+
+                elif edit_records_option == "r":                                    # Remove Existing Parking Space
+                    delete_id_number = -1
+                    found = -1
+
+                    while found == -1:
+                        delete_id_number = input("Enter ID number (e.g. 12) to delete parking space, or q to cancel : ").strip()
+
+                        if len(delete_id_number) > 1 and delete_id_number[0] == "0":
+                            delete_id_number = delete_id_number[1:]                 # To prevent id with leading zeros (e.g. 02) from being considered invalid (02 != 2)
+
+                        if delete_id_number.lower() == "q":
+                            break
+
+                        for space in parking_spaces:
+                            if delete_id_number == str(get_id_number(space)):
+                                confirm = -1                                        # Confirmation for delete space
+                                                                                    
+                                while confirm not in ["y", "n"]:
+                                    confirm = input(f"\nDelete parking space {space[0]} ({space[1]})? y/n : ")
+
+                                if confirm == "y":
+                                    found = 1
+                                    parking_spaces.remove(space)
+
+                                    save_to_file(parking_spaces, "parking_spaces.txt", parking_headers)
+                                break
+                        else:
+                            print("Invalid ID, please try again.")                  # Id was not found in the list
 
 if __name__ == "__main__":
     main()
