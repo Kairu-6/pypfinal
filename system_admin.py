@@ -83,7 +83,7 @@ def main():
                 current_line = ""
                 for i in range(len(parking_spaces)):
                     data = parking_spaces[i]
-                    current_line += f"{data[0]}({data[1]}) : {data[2]}" + "    "             # Parse into readable format
+                    current_line += f"{data[0]}({data[1]}) : {'[' + data[3] + ']' if data[3] else data[2]}".ljust(30)           # Parse into readable format (shows plate if occupied, else "available")
 
                     if (i+1) % 5 == 0:
                         print(current_line)
