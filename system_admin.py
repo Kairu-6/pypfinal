@@ -67,7 +67,7 @@ def get_space(id_number, data_list):
 
 def enter_parking_id_num():                                 
     try:
-        id_number_str = input("Enter ID number (e.g. 12) to delete parking space, or q to cancel : ").strip()
+        id_number_str = input("Enter ID number (e.g. 12) of parking space, or q to cancel : ").strip()
 
         if id_number_str.lower() == "q":
             return "q"
@@ -183,7 +183,71 @@ def main():
                                 print("Invalid ID, please try again.")                  # Id was not found in the list
 
                 elif edit_records_option == "u":
-                    pass
+                    found = -1
+
+                    while found == -1:
+                        update_id_number = enter_parking_id_num()
+
+                        if update_id_number is None:
+                            continue
+
+                        elif update_id_number == "q":
+                            break
+
+                        else:
+                            space = get_space(update_id_number, parking_spaces)
+                            if space:
+                                update_id_index = parking_spaces.index(get_space(update_id_number, parking_spaces))
+
+                                confirm = -1
+
+                                print("Manually altering spaces might cause inconsistencies or errors.")
+                                while confirm not in ["y", "n"]:
+                                    confirm = input("Are you sure to proceed? (y/n) ")
+                                    
+                                if confirm == "n":
+                                    break
+                            
+                            correct_format = -1
+
+                            while correct_format == -1:
+                                new_parking_details = input(f'\nInsert new details for parking space {space[0]} in the format of type/status/plate(blank if none), or q to cancel: ')
+                                
+                                if new_parking_details == "q": 
+                                    break
+
+                                new_parking_details = new_parking_details.split("/")
+
+                                if len(new_parking_details) != 3:
+                                    print("Invalid format, please try again.")
+                                    continue
+
+                                elif new_parking_details[0].capitalize() not in parking_space_types:
+                                    print(f"Invalid parking type. Please choose from: {'/'.join(parking_space_types)}")
+                                    continue
+
+                                elif new_parking_details[1].capitalize() not in ["Available", "Occupied"]:
+                                    print("Invalid status. Please enter 'Available' or 'Occupied'.")
+                                    continue
+
+                                elif new_parking_details[1].capitalize() == "Occupied" and not new_parking_details[2]:
+                                    print("Invalid status. Please supply Plate if space is occupied.")
+                                    continue
+
+                                else:
+                                    correct_format = 1
+
+                                    new_type = new_parking_details[0].capitalize()
+                                    new_status = new_parking_details[1].capitalize()
+                                    new_plate = new_parking_details[2].upper()
+
+                                    if new_status == "Available" and new_plate != "":
+                                        new_plate = ""
+
+                                    parking_spaces[update_id_index] = [space[0], new_type, new_status, new_plate]
+                                    save_to_file(parking_spaces, "parking_spaces.txt", parking_headers)
+                                    
+                                    found = 1
 
 if __name__ == "__main__":
     main()
