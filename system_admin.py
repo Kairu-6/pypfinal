@@ -59,6 +59,26 @@ def get_id_number(space):
     id_number = int(id[1:])
     return id_number
 
+def get_space(id_number, data_list):
+    for item in data_list:
+        if get_id_number(item) == id_number:
+            return item
+    return False
+
+def enter_parking_id_num():                                 
+    try:
+        id_number_str = input("Enter ID number (e.g. 12) to delete parking space, or q to cancel : ").strip()
+
+        if id_number_str.lower() == "q":
+            return "q"
+        
+        elif len(id_number_str) > 1 and id_number_str[0] == "0":                      # To prevent id with leading zeros (e.g. 02) from being considered invalid (02 != 2)
+            id_number_str = id_number_str[1:]
+        return int(id_number_str)
+    
+    except ValueError:
+        print("Invalid input, please enter a numeric ID.")
+
 parking_space_types = ["Regular", "Reserved", "Electric"]
 
 
@@ -80,6 +100,7 @@ def main():
             while True:
                 
                 print_edit_parking_records_menu()
+                
                 current_line = ""
                 for i in range(len(parking_spaces)):
                     data = parking_spaces[i]
@@ -120,7 +141,7 @@ def main():
                         else:
                             new_id = "S0" + str(new_id_num)
 
-                        parking_spaces.append([new_id, new_type, "Available"])
+                        parking_spaces.append([new_id, new_type, "Available", ""])
                         parking_spaces.sort(key=get_id_number)
 
                         if save_to_file(parking_spaces, "parking_spaces.txt", parking_headers):
@@ -129,33 +150,40 @@ def main():
                             print("error")
 
                 elif edit_records_option == "r":                                    # Remove Existing Parking Space
-                    delete_id_number = -1
                     found = -1
 
                     while found == -1:
-                        delete_id_number = input("Enter ID number (e.g. 12) to delete parking space, or q to cancel : ").strip()
+                        delete_id_number = enter_parking_id_num()
 
-                        if len(delete_id_number) > 1 and delete_id_number[0] == "0":
-                            delete_id_number = delete_id_number[1:]                 # To prevent id with leading zeros (e.g. 02) from being considered invalid (02 != 2)
+                        if delete_id_number is None:
+                            continue
 
-                        if delete_id_number.lower() == "q":
+                        elif delete_id_number == "q":
                             break
-
-                        for space in parking_spaces:
-                            if delete_id_number == str(get_id_number(space)):
-                                confirm = -1                                        # Confirmation for delete space
-                                                                                    
-                                while confirm not in ["y", "n"]:
-                                    confirm = input(f"\nDelete parking space {space[0]} ({space[1]})? y/n : ")
-
-                                if confirm == "y":
-                                    found = 1
-                                    parking_spaces.remove(space)
-
-                                    save_to_file(parking_spaces, "parking_spaces.txt", parking_headers)
-                                break
+                        
                         else:
-                            print("Invalid ID, please try again.")                  # Id was not found in the list
+                            space = get_space(delete_id_number, parking_spaces)
+                            if space:
+                                if space[2] == "Occupied":
+                                    print(f"\nParking space is occupied by {space[3]}. Please ask a Parking Staff to remove vehicle.")
+
+                                else:
+                                    confirm = -1                                        # Confirmation to delete space
+                                                                                            
+                                    while confirm not in ["y", "n"]:
+                                        confirm = input(f"\nDelete parking space {space[0]} ({space[1]})? y/n : ")
+
+                                    if confirm == "y":
+                                        found = 1
+                                        parking_spaces.remove(space)
+
+                                        save_to_file(parking_spaces, "parking_spaces.txt", parking_headers)
+                                    break
+                            else:
+                                print("Invalid ID, please try again.")                  # Id was not found in the list
+
+                elif edit_records_option == "u":
+                    pass
 
 if __name__ == "__main__":
     main()
