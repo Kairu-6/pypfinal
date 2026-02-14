@@ -1,3 +1,6 @@
+parking_space_types = ["Regular", "Reserved", "Electric"]
+permit_priority = {"D": 1, "M": 2, "A": 3}
+
 def print_admin_menu():
     print("\n" + "="*45)
     print("   PARKING MANAGEMENT SYSTEM - ADMIN MENU   ")
@@ -16,6 +19,15 @@ def print_edit_parking_records_menu():
     print("[a] Add New Parking Space")
     print("[r] Remove Existing Parking Space")
     print("[u] Update Space Information")
+    print("[b] Back to Main Admin Menu")
+    print("-" * 40)
+
+def print_edit_permit_types_menu():
+    print("\n" + "=" * 40)
+    print("      EDIT PERMIT TYPES MENU      ")
+    print("=" * 40)
+    print("[a] Add New Permit Type")
+    print("[u] Update Permit Price/Availability")
     print("[b] Back to Main Admin Menu")
     print("-" * 40)
 
@@ -55,8 +67,8 @@ def save_to_file(data_list, file_name, headers):
         return False
 
 def get_id_number(space):
-    id = space[0]
-    id_number = int(id[1:])
+    full_id = space[0]
+    id_number = int(full_id[1:])
     return id_number
 
 def get_space(id_number, data_list):
@@ -79,12 +91,18 @@ def enter_parking_id_num():
     except ValueError:
         print("Invalid input, please enter a numeric ID.")
 
-parking_space_types = ["Regular", "Reserved", "Electric"]
-
+def permit_types_sort_key(permit):
+    full_id = permit[0]
+    category = full_id[0]
+    id_num = get_id_number(permit)
+    priority = permit_priority.get(category, 4)
+    
+    return (priority, id_num)
 
 def main():
     while True:
         parking_headers, parking_spaces = load_from_file("parking_spaces.txt")
+        permit_types_headers, permit_types = load_from_file("permit_types.txt")
 
         print_admin_menu()
 
@@ -112,8 +130,7 @@ def main():
                     elif i == len(parking_spaces)-1:
                         print(current_line)
                 
-                print("")
-                edit_records_option = input("Enter selection: ")
+                edit_records_option = input("\nEnter selection: ")
 
 
                 if edit_records_option == "b":                                      # Back To Main Menu
@@ -136,10 +153,7 @@ def main():
                         while new_id_num in existing_ids:
                             new_id_num += 1
 
-                        if len(str(new_id_num)) > 1:                                    # Creation of new id based on id number(one digit or more)
-                            new_id = "S" + str(new_id_num)
-                        else:
-                            new_id = "S0" + str(new_id_num)
+                        new_id = f"S{new_id_num:02d}"
 
                         parking_spaces.append([new_id, new_type, "Available", ""])
                         parking_spaces.sort(key=get_id_number)
@@ -248,6 +262,52 @@ def main():
                                     save_to_file(parking_spaces, "parking_spaces.txt", parking_headers)
                                     
                                     found = 1
+
+
+        elif admin_menu_option == "p":                                  # Edit Permit pricing and types
+            permit_options = ["Daily", "Monthly", "Annual"]
+
+            while True:
+                
+                print_edit_permit_types_menu()
+                print("Available permit types")
+                for type in permit_types:
+                    print(f"{type[0]} - {type[1].ljust(7)} : RM{type[2]}")
+                
+                edit_permit_types_option = input("\nEnter selection: ")
+
+                if edit_permit_types_option == "b":
+                    break
+
+                elif edit_permit_types_option == "a":
+                    new_permit_option = -1
+                    new_permit_price = -1
+
+                    while new_permit_option not in permit_options:
+                        new_permit_option = input("Enter new permit type [Daily/Monthly/Annual] : ").capitalize()
+                    
+                    while new_permit_price < 0:
+                        try:
+                            new_permit_price = float(input("Insert price of new permit : "))
+                            if new_permit_price < 0:
+                                print("Price cannot be negative.")
+                        except ValueError:
+                            print("Invalid price, please try again.")
+
+                    new_permit_category = new_permit_option[0]                                # First letter of type D/M/A
+
+                    counter = 0
+                    for p_type in permit_types:
+                        if p_type[0][0] == new_permit_category:
+                            counter += 1
+                    counter += 1
+
+                    new_permit_type_id = f"{new_permit_category}{counter:02d}"
+                    new_permit_type = [new_permit_type_id, new_permit_option.capitalize(), f"{new_permit_price:.2f}"]
+                    permit_types.append(new_permit_type)
+                    
+                    permit_types.sort(key=permit_types_sort_key)
+                    save_to_file(permit_types, "permit_types.txt", permit_types_headers)
 
 if __name__ == "__main__":
     main()
