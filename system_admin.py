@@ -31,6 +31,15 @@ def print_edit_permit_types_menu():
     print("[b] Back to Main Admin Menu")
     print("-" * 40)
 
+def print_generate_records_menu():
+    print("\n" + "=" * 40)
+    print("         GENERATE REPORTS MENU         ")
+    print("=" * 40)
+    print("[r] Generate Revenue Report")
+    print("[o] Generate Occupancy Report")
+    print("[b] Back to Main Admin Menu")
+    print("-" * 40)
+
 def load_from_file(file_name):
     headers = []
     data_list = []
@@ -131,7 +140,7 @@ def get_valid_time():
         if len(parts) == 2 and len(parts[0]) == 2 and len(parts[1]) == 2:
 
             if parts[0].isdigit() and parts[1].isdigit():
-                
+
                 if 0 <= int(parts[0]) <= 23 and 0 <= int(parts[1]) <= 59:
                     return time_str
                 
@@ -418,7 +427,123 @@ def main():
                                 print("invalid permit ID, please try again")
 
         elif admin_menu_option == "r":                                  # Edit Permit pricing and types
-            pass
+            while True:
+                print_generate_records_menu()
+
+                choice = -1
+                while choice not in ['r', 'o', 'b']:
+                    choice = input("Enter selection: ").strip().lower()
+                    if choice not in ['r', 'o', 'b']:
+                        print("Invalid selection, please try again.")
+
+                if choice == "b":
+                    break
+
+                report_date = get_valid_date()
+                if report_date == 'q':
+                    continue
+
+                report_time = get_valid_time()
+                if report_time == 'q':
+                    continue
+
+                if choice == "r":                                                   # Generate revenue report
+                
+                    total_revenue = 0.0
+                    cat_totals = {"D": {"count": 0, "sum": 0.0}, "M": {"count": 0, "sum": 0.0}, "A": {"count": 0, "sum": 0.0}}
+                        
+                    id_stats = {}
+                    for p_type in permit_types:
+                        id_stats[p_type[0]] = {"type": p_type[1], "price": float(p_type[2]), "sold": 0, "subtotal": 0.0}        # Sets up dict for every permit type
+
+                    for p in permits:
+                        permit_id = p[2]
+
+                        if permit_id in id_stats:
+                            price = id_stats[permit_id]["price"]                        # Gets corresponding price based on ID
+                            permit_category = permit_id[0]                              # Extracts category from ID (D/M/A)
+                                
+                            id_stats[permit_id]["sold"] += 1
+                            id_stats[permit_id]["subtotal"] += price                    # Adds to total count and price of each permit type
+                                
+                            cat_totals[permit_category]["count"] += 1
+                            cat_totals[permit_category]["sum"] += price                 # Adds to total count and price of each category
+                            total_revenue += price
+
+                    with open("revenue.txt", "w") as report:
+                        report.write(f"\n============================================================\n")
+                        report.write(f"PARKING SYSTEM REVENUE REPORT\n")
+                        report.write(f"Generated on: {report_date} {report_time}\n")
+                        report.write(f"============================================================\n\n")
+                        report.write(f"--- OVERALL REVENUE SUMMARY ---\n")
+                        report.write(f"Total Revenue Generated: RM {total_revenue:,.2f}\n\n")
+                        report.write(f"--- REVENUE BY PERMIT CATEGORY ---\n")
+                        report.write(f"[D] Daily Permits    ({cat_totals['D']['count']:>2} Sold)    : RM {cat_totals['D']['sum']:>9,.2f}\n")
+                        report.write(f"[M] Monthly Permits  ({cat_totals['M']['count']:>2} Sold)    : RM {cat_totals['M']['sum']:>9,.2f}\n")
+                        report.write(f"[A] Annual Permits   ({cat_totals['A']['count']:>2} Sold)    : RM {cat_totals['A']['sum']:>9,.2f}\n\n")
+                        report.write(f"--- DETAILED PERMIT BREAKDOWN ---\n")
+                        report.write(f"Permit ID | Type    | Price (RM) | Sold | Subtotal (RM)\n")
+                        report.write(f"------------------------------------------------------------\n")
+                        for permit_id, data in id_stats.items():
+                            report.write(f"{permit_id:<9} | {data['type']:<7} | {data['price']:>10,.2f} | {data['sold']:>4} | {data['subtotal']:>13,.2f}\n")
+                        report.write(f"============================================================\n")
+                            
+                    print("\nRevenue report generated and written to revenue.txt successfully.")
+
+                elif choice == "o":                                                 # Generate occupancy report
+                    total_spaces = len(parking_spaces)
+                    occupied_spaces = 0
+                        
+                    space_stats = {"Regular": [0, 0], "Reserved": [0, 0], "Electric": [0, 0]}       # Format: [total, occupied]
+                        
+                    for space in parking_spaces:
+                        space_type = space[1].capitalize()
+                        space_status = space[2].capitalize()
+                            
+                        if space_type in space_stats:                                               # Calculates total count and occupied spaces according to space type
+                            space_stats[space_type][0] += 1
+                            if space_status == "Occupied":
+                                space_stats[space_type][1] += 1
+                                occupied_spaces += 1
+
+                    available_spaces = total_spaces - occupied_spaces
+                    capacity_rate = (occupied_spaces / total_spaces * 100) if total_spaces > 0 else 0           # Percentage of occupied spaces
+
+                    active_permits = len(permits)
+                    permit_counts = {"D": 0, "M": 0, "A": 0}                                                         # Active permits by category
+                    for p in permits:
+                        permit_counts[p[2][0]] += 1
+
+                    with open("occupancy.txt", "a") as report:
+                        report.write(f"\n============================================================\n")
+                        report.write(f"PARKING SYSTEM OCCUPANCY & USAGE REPORT\n")
+                        report.write(f"Generated on: {report_date} {report_time}\n")
+                        report.write(f"============================================================\n\n")
+                        report.write(f"--- OVERALL PARKING SPACE UTILIZATION ---\n")
+                        report.write(f"Total Parking Spaces : {total_spaces}\n")
+                        report.write(f"Occupied Spaces      : {occupied_spaces}\n")
+                        report.write(f"Available Spaces     :  {available_spaces}\n")
+                        report.write(f"Current space_status     : {capacity_rate:.1f}%\n\n")
+                            
+                        report.write(f"--- UTILIZATION BY SPACE TYPE ---\n")
+                        report.write(f"Type       | Total | Occupied | Available | Occupancy %\n")
+                        report.write(f"------------------------------------------------------------\n")
+                        for space_type, counts in space_stats.items():
+                            t_count = counts[0]
+                            o_count = counts[1]
+                            a_count = t_count - o_count
+                            percentage = (o_count / t_count * 100) if t_count > 0 else 0
+                            report.write(f"{space_type:<10} | {t_count:>5} | {o_count:>8} | {a_count:>9} | {percentage:>10.1f}%\n")
+                                
+                        report.write(f"\n--- ACTIVE PERMITS SUMMARY ---\n")
+                        report.write(f"Total Active Permits : {active_permits}\n")
+                        report.write(f"Daily Permits        :  {permit_counts['D']}\n")
+                        report.write(f"Monthly Permits      :  {permit_counts['M']}\n")
+                        report.write(f"Annual Permits       :  {permit_counts['A']}\n")
+                        report.write(f"============================================================\n")
+                            
+                    print("\nOccupancy report generated and written to occupancy.txt successfully.")
+
 
 
 if __name__ == "__main__":
