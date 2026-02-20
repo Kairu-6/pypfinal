@@ -139,7 +139,7 @@ def main():
 
                 elif edit_records_option == "a":                                    # Add New Parking Space
                     new_type = -1
-                    while new_type not in parking_space_types and new_type != "q":
+                    while new_type.capitalize() not in parking_space_types and new_type != "q":
                         new_type = input(f"What type of parking? [{"/".join(parking_space_types)}] (q to cancel): ").strip()
 
                     if new_type == "q":
@@ -155,7 +155,7 @@ def main():
 
                         new_id = f"S{new_id_num:02d}"
 
-                        parking_spaces.append([new_id, new_type, "Available", ""])
+                        parking_spaces.append([new_id, new_type.capitalize(), "Available", ""])
                         parking_spaces.sort(key=get_id_number)
 
                         if save_to_file(parking_spaces, "parking_spaces.txt", parking_headers):
@@ -294,16 +294,16 @@ def main():
                         except ValueError:
                             print("Invalid price, please try again.")
 
-                    new_permit_category = new_permit_option[0]                                # First letter of type D/M/A
+                    new_permit_category = new_permit_option[0]                                  # First letter of option (D/M/A)
 
                     counter = 0
-                    for p_type in permit_types:
+                    for p_type in permit_types:                                                 # Look for first non-existent id number in the same category (Daily, Monthly, Annual)
                         if p_type[0][0] == new_permit_category:
                             counter += 1
                     counter += 1
 
-                    new_permit_type_id = f"{new_permit_category}{counter:02d}"
-                    new_permit_type = [new_permit_type_id, new_permit_option.capitalize(), f"{new_permit_price:.2f}"]
+                    new_permit_type_id = f"{new_permit_category}{counter:02d}"                                              # Combines letter (D/M/A) with id number (e.g. 12) to form a new unique id (D01)
+                    new_permit_type = [new_permit_type_id, new_permit_option.capitalize(), f"{new_permit_price:.2f}"]       # Puts together id, permit type, and price in a list
                     permit_types.append(new_permit_type)
                     
                     permit_types.sort(key=permit_types_sort_key)
