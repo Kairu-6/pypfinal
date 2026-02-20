@@ -68,28 +68,36 @@ def save_to_file(data_list, file_name, headers):
 
 def get_id_number(space):
     full_id = space[0]
-    id_number = int(full_id[1:])
-    return id_number
+    return int(full_id[1:])
 
-def get_space(id_number, data_list):
+def get_record(full_id, data_list):
+    target = full_id.strip().upper()
+
     for item in data_list:
-        if get_id_number(item) == id_number:
+        if item[0].upper() == target:
             return item
     return False
 
-def enter_parking_id_num():                                 
+def enter_id(id_name):                                 
     try:
-        id_number_str = input("Enter ID number (e.g. 12) of parking space, or q to cancel : ").strip()
+        id_str = input(f"Enter ID (e.g. S12) of {id_name}, or q to cancel : ").strip()
 
-        if id_number_str.lower() == "q":
-            return "q"
+        if id_str.lower() == "q":
+            return "q", "q"
         
-        elif len(id_number_str) > 1 and id_number_str[0] == "0":                      # To prevent id with leading zeros (e.g. 02) from being considered invalid (02 != 2)
-            id_number_str = id_number_str[1:]
-        return int(id_number_str)
+        if not id_str[0].isalpha():
+            print("Invalid format. ID must start with a letter (e.g., S12).")
+            return None, None
+
+        elif len(id_str) > 2 and id_str[1] == "0":                      # To prevent id number with leading zeros (e.g. 02) from being considered invalid (02 != 2)
+            id_number_str = id_str[2:]
+        else:
+            id_number_str = id_str[1:]
+        return id_str[0], int(id_number_str)
     
     except ValueError:
-        print("Invalid input, please enter a numeric ID.")
+        print("Invalid ID, please try again.")
+        return None, None
 
 def permit_types_sort_key(permit):
     full_id = permit[0]
@@ -138,7 +146,7 @@ def main():
 
 
                 elif edit_records_option == "a":                                    # Add New Parking Space
-                    new_type = -1
+                    new_type = ""
                     while new_type.capitalize() not in parking_space_types and new_type != "q":
                         new_type = input(f"What type of parking? [{"/".join(parking_space_types)}] (q to cancel): ").strip()
 
@@ -167,7 +175,7 @@ def main():
                     found = -1
 
                     while found == -1:
-                        delete_id_number = enter_parking_id_num()
+                        id_code, delete_id_number = enter_id("parking space")
 
                         if delete_id_number is None:
                             continue
@@ -176,7 +184,7 @@ def main():
                             break
                         
                         else:
-                            space = get_space(delete_id_number, parking_spaces)
+                            space = get_record(f"{id_code}{delete_id_number:02d}", parking_spaces)
                             if space:
                                 if space[2] == "Occupied":
                                     print(f"\nParking space is occupied by {space[3]}. Please ask a Parking Staff to remove vehicle.")
@@ -192,7 +200,7 @@ def main():
                                         parking_spaces.remove(space)
 
                                         save_to_file(parking_spaces, "parking_spaces.txt", parking_headers)
-                                    break
+                                    found = 1
                             else:
                                 print("Invalid ID, please try again.")                  # Id was not found in the list
 
@@ -200,7 +208,7 @@ def main():
                     found = -1
 
                     while found == -1:
-                        update_id_number = enter_parking_id_num()
+                        id_code, update_id_number = enter_id("parking space")
 
                         if update_id_number is None:
                             continue
@@ -209,10 +217,9 @@ def main():
                             break
 
                         else:
-                            space = get_space(update_id_number, parking_spaces)
+                            space = get_record(f"{id_code}{update_id_number:02d}", parking_spaces)
                             if space:
-                                update_id_index = parking_spaces.index(get_space(update_id_number, parking_spaces))
-
+                                update_id_number_index = parking_spaces.index(space)
                                 confirm = -1
 
                                 print("Manually altering spaces might cause inconsistencies or errors.")
@@ -222,46 +229,48 @@ def main():
                                 if confirm == "n":
                                     break
                             
-                            correct_format = -1
+                                correct_format = -1
 
-                            while correct_format == -1:
-                                new_parking_details = input(f'\nInsert new details for parking space {space[0]} in the format of type/status/plate(blank if none), or q to cancel: ')
-                                
-                                if new_parking_details == "q": 
-                                    break
-
-                                new_parking_details = new_parking_details.split("/")
-
-                                if len(new_parking_details) != 3:
-                                    print("Invalid format, please try again.")
-                                    continue
-
-                                elif new_parking_details[0].capitalize() not in parking_space_types:
-                                    print(f"Invalid parking type. Please choose from: {'/'.join(parking_space_types)}")
-                                    continue
-
-                                elif new_parking_details[1].capitalize() not in ["Available", "Occupied"]:
-                                    print("Invalid status. Please enter 'Available' or 'Occupied'.")
-                                    continue
-
-                                elif new_parking_details[1].capitalize() == "Occupied" and not new_parking_details[2]:
-                                    print("Invalid status. Please supply Plate if space is occupied.")
-                                    continue
-
-                                else:
-                                    correct_format = 1
-
-                                    new_type = new_parking_details[0].capitalize()
-                                    new_status = new_parking_details[1].capitalize()
-                                    new_plate = new_parking_details[2].upper()
-
-                                    if new_status == "Available" and new_plate != "":
-                                        new_plate = ""
-
-                                    parking_spaces[update_id_index] = [space[0], new_type, new_status, new_plate]
-                                    save_to_file(parking_spaces, "parking_spaces.txt", parking_headers)
+                                while correct_format == -1:
+                                    new_parking_details = input(f'\nInsert new details for parking space {space[0]} in the format of type/status/plate(blank if none), or q to cancel: ')
                                     
-                                    found = 1
+                                    if new_parking_details == "q": 
+                                        break
+
+                                    new_parking_details = new_parking_details.split("/")
+
+                                    if len(new_parking_details) != 3:
+                                        print("Invalid format, please try again.")
+                                        continue
+
+                                    elif new_parking_details[0].capitalize() not in parking_space_types:
+                                        print(f"Invalid parking type. Please choose from: {'/'.join(parking_space_types)}")
+                                        continue
+
+                                    elif new_parking_details[1].capitalize() not in ["Available", "Occupied"]:
+                                        print("Invalid status. Please enter 'Available' or 'Occupied'.")
+                                        continue
+
+                                    elif new_parking_details[1].capitalize() == "Occupied" and not new_parking_details[2]:
+                                        print("Invalid status. Please supply Plate if space is occupied.")
+                                        continue
+
+                                    else:
+                                        correct_format = 1
+
+                                        new_type = new_parking_details[0].capitalize()
+                                        new_status = new_parking_details[1].capitalize()
+                                        new_plate = new_parking_details[2].upper()
+
+                                        if new_status == "Available" and new_plate != "":
+                                            new_plate = ""
+
+                                        parking_spaces[update_id_number_index] = [space[0], new_type, new_status, new_plate]
+                                        save_to_file(parking_spaces, "parking_spaces.txt", parking_headers)
+                                        
+                                        found = 1
+                            else:
+                                print("ID not found, please try again.")
 
 
         elif admin_menu_option == "p":                                  # Edit Permit pricing and types
@@ -279,13 +288,16 @@ def main():
                 if edit_permit_types_option == "b":
                     break
 
-                elif edit_permit_types_option == "a":
-                    new_permit_option = -1
+                elif edit_permit_types_option == "a":                                           # Add new permit type
+                    new_permit_option = ""
                     new_permit_price = -1
 
-                    while new_permit_option not in permit_options:
-                        new_permit_option = input("Enter new permit type [Daily/Monthly/Annual] : ").capitalize()
+                    while new_permit_option not in permit_options and new_permit_option != 'Q':
+                        new_permit_option = input("Enter new permit type [Daily/Monthly/Annual] or q to cancel : ").capitalize()
                     
+                    if new_permit_option == 'Q':
+                        continue
+
                     while new_permit_price < 0:
                         try:
                             new_permit_price = float(input("Insert price of new permit : "))
@@ -296,18 +308,89 @@ def main():
 
                     new_permit_category = new_permit_option[0]                                  # First letter of option (D/M/A)
 
-                    counter = 0
-                    for p_type in permit_types:                                                 # Look for first non-existent id number in the same category (Daily, Monthly, Annual)
+                    existing_ids = []
+                    for p_type in permit_types:
                         if p_type[0][0] == new_permit_category:
-                            counter += 1
-                    counter += 1
+                            existing_ids.append(int(p_type[0][1:]))                             # Extract number id from already available permits in the same category
 
-                    new_permit_type_id = f"{new_permit_category}{counter:02d}"                                              # Combines letter (D/M/A) with id number (e.g. 12) to form a new unique id (D01)
-                    new_permit_type = [new_permit_type_id, new_permit_option.capitalize(), f"{new_permit_price:.2f}"]       # Puts together id, permit type, and price in a list
+                    new_id_num = 1
+                    while new_id_num in existing_ids:
+                        new_id_num += 1
+
+                    new_permit_type_id = f"{new_permit_category}{new_id_num:02d}"                                               # Combines letter (D/M/A) with id number (e.g. 12) to form a new unique id (D01)
+                    new_permit_type = [new_permit_type_id, new_permit_option.capitalize(), f"{new_permit_price:.2f}"]           # Puts together id, permit type, and price in a list
                     permit_types.append(new_permit_type)
                     
                     permit_types.sort(key=permit_types_sort_key)
                     save_to_file(permit_types, "permit_types.txt", permit_types_headers)
+
+                elif edit_permit_types_option == "u":                                           # Update permit price/availability
+                    found = -1
+
+                    while found == -1:
+                        id_code, update_id_number = enter_id("permit type")
+
+                        if update_id_number is None:
+                            continue
+
+                        elif update_id_number == "q":
+                            break
+
+                        else:
+                            permit_to_update = get_record(f"{id_code}{update_id_number:02d}", permit_types)
+
+                            if permit_to_update:
+                                print(f"\nCurrent Details for {permit_to_update[0]}: {permit_to_update[1]} @ RM{permit_to_update[2]}")
+
+                                option = ""
+                                while option not in ["p", "r", "q"]:
+                                    option = input("Insert option : p to update price, r to remove permit type, q to cancel : ").strip().lower()
+
+                                if option == 'q':
+                                    break
+
+                                elif option == 'p':
+                                    update_index = permit_types.index(permit_to_update)
+
+                                    new_price = -1
+                                    while new_price < 0:
+                                        try:
+                                            new_price = float(input("Insert price of new permit : "))
+                                            if new_price < 0:
+                                                print("Price cannot be negative.")
+                                        except ValueError:
+                                            print("Invalid price, please try again.")
+
+                                    permit_types[update_index] = [permit_to_update[0], permit_to_update[1], f"{new_price:.2f}"]
+                                        
+                                    if save_to_file(permit_types, "permit_types.txt", permit_types_headers):
+                                        print(f"Success! {permit_to_update[0]} updated to RM{new_price:.2f}.")
+                                        found = 1
+                                    else:
+                                        print("Error saving to file.")
+
+                                elif option == 'r':
+                                    confirm = ""
+                                    while confirm not in ["y", "n"]:
+                                        confirm = input(f"Remove permit type {permit_to_update[0]} ({permit_to_update[1]})? y/n : ").strip().lower()
+
+                                    if confirm == "y":
+                                        permit_types.remove(permit_to_update)
+                                        
+                                        if save_to_file(permit_types, "permit_types.txt", permit_types_headers):
+                                            print(f"Success! {permit_to_update[0]} removed.")
+                                            found = 1 # Breaks the outer loop after success
+                                        else:
+                                            print("Error saving to file.")
+                                    else:
+                                        print("Removal cancelled.")
+                                        break
+
+                            else:
+                                print("invalid permit ID, please try again")
+                                
+
+
 
 if __name__ == "__main__":
     main()
