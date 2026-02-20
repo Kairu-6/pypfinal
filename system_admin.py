@@ -107,10 +107,41 @@ def permit_types_sort_key(permit):
     
     return (priority, id_num)
 
+def get_valid_date():
+    while True:
+        date_str = input("Enter date (DD-MM-YYYY) or q to cancel : ").strip()
+        if date_str.lower() == "q":
+            return "q"
+        
+        parts = date_str.split("-")
+        if len(parts) == 3 and len(parts[0]) == 2 and len(parts[1]) == 2 and len(parts[2]) == 4:   
+
+            if parts[0].isdigit() and parts[1].isdigit() and parts[2].isdigit():
+                return date_str
+        
+        print("Invalid format. Please use exactly DD-MM-YYYY.")
+
+def get_valid_time():
+    while True:
+        time_str = input("Enter time (HH:MM) or q to cancel : ").strip()
+        if time_str.lower() == "q":
+            return "q"
+        
+        parts = time_str.split(":")
+        if len(parts) == 2 and len(parts[0]) == 2 and len(parts[1]) == 2:
+
+            if parts[0].isdigit() and parts[1].isdigit():
+                
+                if 0 <= int(parts[0]) <= 23 and 0 <= int(parts[1]) <= 59:
+                    return time_str
+                
+        print("Invalid format. Please use exactly HH:MM (24-hour).")
+
 def main():
     while True:
         parking_headers, parking_spaces = load_from_file("parking_spaces.txt")
         permit_types_headers, permit_types = load_from_file("permit_types.txt")
+        permits_headers, permits = load_from_file("permits.txt")
 
         print_admin_menu()
 
@@ -377,19 +408,17 @@ def main():
                                     if confirm == "y":
                                         permit_types.remove(permit_to_update)
                                         
-                                        if save_to_file(permit_types, "permit_types.txt", permit_types_headers):
-                                            print(f"Success! {permit_to_update[0]} removed.")
-                                            found = 1 # Breaks the outer loop after success
-                                        else:
-                                            print("Error saving to file.")
+                                        save_to_file(permit_types, "permit_types.txt", permit_types_headers)
+                                        found = 1
                                     else:
                                         print("Removal cancelled.")
                                         break
 
                             else:
                                 print("invalid permit ID, please try again")
-                                
 
+        elif admin_menu_option == "r":                                  # Edit Permit pricing and types
+            pass
 
 
 if __name__ == "__main__":
