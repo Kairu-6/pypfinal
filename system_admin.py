@@ -1,6 +1,3 @@
-parking_space_types = ["Regular", "Reserved", "Electric"]
-permit_priority = {"D": 1, "M": 2, "A": 3}
-
 def print_admin_menu():
     print("\n" + "="*45)
     print("   PARKING MANAGEMENT SYSTEM - ADMIN MENU   ")
@@ -87,7 +84,7 @@ def get_record(full_id, data_list):
             return item
     return False
 
-def enter_id(id_name):                                 
+def enter_id(id_name):
     try:
         id_str = input(f"Enter ID (e.g. S12) of {id_name}, or q to cancel : ").strip()
 
@@ -109,6 +106,8 @@ def enter_id(id_name):
         return None, None
 
 def permit_types_sort_key(permit):
+    permit_priority = {"D": 1, "M": 2, "A": 3} 
+
     full_id = permit[0]
     category = full_id[0]
     id_num = get_id_number(permit)
@@ -146,23 +145,42 @@ def get_valid_time():
                 
         print("Invalid format. Please use exactly HH:MM (24-hour).")
 
+def print_view_records_menu():
+    print("\n" + "=" * 40)
+    print("           VIEW RECORDS MENU           ")
+    print("=" * 40)
+    print("[ps] View All Parking Spaces")
+    print("[pt] View All Permit Types")
+    print("[p] View All Issued Permits")
+    print("[v] View All Violations")
+    print("[b] Back to Main Admin Menu")
+    print("-" * 40)
+
 def main():
     while True:
         parking_headers, parking_spaces = load_from_file("parking_spaces.txt")
         permit_types_headers, permit_types = load_from_file("permit_types.txt")
         permits_headers, permits = load_from_file("permits.txt")
+        violations_headers, violations = load_from_file("violations.txt")
 
         print_admin_menu()
+        admin_menu_options = ['e', 'p', 'r', 'v', 'q']
+        admin_menu_option = ""
 
-        admin_menu_option = input("Enter selection: ")
+        while admin_menu_option not in admin_menu_options:
+            admin_menu_option = input("Enter selection: ").strip().lower()
+
+            if admin_menu_option not in admin_menu_options:
+                print("Invalid selection, please try again.")
 
         if admin_menu_option == "q":
             print("Exiting Menu...")
             break
 
 
-        elif admin_menu_option == "e":                                      # Edit Parking Records
-            
+        elif admin_menu_option == "e":                                  # Edit Parking Records
+            parking_space_types = ["Regular", "Reserved", "Electric"]
+
             while True:
                 
                 print_edit_parking_records_menu()
@@ -178,7 +196,14 @@ def main():
                     elif i == len(parking_spaces)-1:
                         print(current_line)
                 
-                edit_records_option = input("\nEnter selection: ")
+                edit_records_options = ['b', 'a', 'r', 'u']
+                edit_records_option = ""
+
+                while edit_records_option not in edit_records_options:
+                    edit_records_option = input("\nEnter selection: ").strip().lower()
+
+                    if edit_records_option not in edit_records_options:
+                        print("Invalid selection, please try again.")
 
 
                 if edit_records_option == "b":                                      # Back To Main Menu
@@ -188,7 +213,7 @@ def main():
                 elif edit_records_option == "a":                                    # Add New Parking Space
                     new_type = ""
                     while new_type.capitalize() not in parking_space_types and new_type != "q":
-                        new_type = input(f"What type of parking? [{"/".join(parking_space_types)}] (q to cancel): ").strip()
+                        new_type = input(f"What type of parking? [{'/'.join(parking_space_types)}] (q to cancel): ").strip()
 
                     if new_type == "q":
                         continue
@@ -323,7 +348,14 @@ def main():
                 for type in permit_types:
                     print(f"{type[0]} - {type[1].ljust(7)} : RM{type[2]}")
                 
-                edit_permit_types_option = input("\nEnter selection: ")
+                edit_permit_types_option = ""
+                edit_permit_types_options = ['b', 'a', 'u']
+                
+                while edit_permit_types_option not in edit_permit_types_options:
+                    edit_permit_types_option = input("\nEnter selection: ").strip().lower()
+
+                    if edit_permit_types_option not in edit_permit_types_options:
+                        print("Invalid selection, please try again.")
 
                 if edit_permit_types_option == "b":
                     break
@@ -426,17 +458,21 @@ def main():
                             else:
                                 print("invalid permit ID, please try again")
 
-        elif admin_menu_option == "r":                                  # Edit Permit pricing and types
+
+        elif admin_menu_option == "r":                                  # Generate Revenue or Occupancy Reports
             while True:
                 print_generate_records_menu()
 
-                choice = -1
-                while choice not in ['r', 'o', 'b']:
-                    choice = input("Enter selection: ").strip().lower()
-                    if choice not in ['r', 'o', 'b']:
+                generate_report_option = ""
+                generate_report_options = ['r', 'o', 'b']
+
+                while generate_report_option not in generate_report_options:
+                    generate_report_option = input("Enter selection: ").strip().lower()
+
+                    if generate_report_option not in generate_report_options:
                         print("Invalid selection, please try again.")
 
-                if choice == "b":
+                if generate_report_option == "b":
                     break
 
                 report_date = get_valid_date()
@@ -447,7 +483,7 @@ def main():
                 if report_time == 'q':
                     continue
 
-                if choice == "r":                                                   # Generate revenue report
+                if generate_report_option == "r":                                                   # Generate revenue report
                 
                     total_revenue = 0.0
                     cat_totals = {"D": {"count": 0, "sum": 0.0}, "M": {"count": 0, "sum": 0.0}, "A": {"count": 0, "sum": 0.0}}
@@ -470,7 +506,7 @@ def main():
                             cat_totals[permit_category]["sum"] += price                 # Adds to total count and price of each category
                             total_revenue += price
 
-                    with open("revenue.txt", "w") as report:
+                    with open("revenue.txt", "a") as report:
                         report.write(f"\n============================================================\n")
                         report.write(f"PARKING SYSTEM REVENUE REPORT\n")
                         report.write(f"Generated on: {report_date} {report_time}\n")
@@ -486,11 +522,12 @@ def main():
                         report.write(f"------------------------------------------------------------\n")
                         for permit_id, data in id_stats.items():
                             report.write(f"{permit_id:<9} | {data['type']:<7} | {data['price']:>10,.2f} | {data['sold']:>4} | {data['subtotal']:>13,.2f}\n")
-                        report.write(f"============================================================\n")
+                        report.write(f"============================================================")
+                        report.write(f"\n\n\n")
                             
-                    print("\nRevenue report generated and written to revenue.txt successfully.")
+                    print("\nRevenue report generated and appended to revenue.txt successfully.")
 
-                elif choice == "o":                                                 # Generate occupancy report
+                elif generate_report_option == "o":                                                 # Generate occupancy report
                     total_spaces = len(parking_spaces)
                     occupied_spaces = 0
                         
@@ -523,7 +560,7 @@ def main():
                         report.write(f"Total Parking Spaces : {total_spaces}\n")
                         report.write(f"Occupied Spaces      : {occupied_spaces}\n")
                         report.write(f"Available Spaces     :  {available_spaces}\n")
-                        report.write(f"Current space_status     : {capacity_rate:.1f}%\n\n")
+                        report.write(f"Current Capacity     : {capacity_rate:.1f}%\n\n")
                             
                         report.write(f"--- UTILIZATION BY SPACE TYPE ---\n")
                         report.write(f"Type       | Total | Occupied | Available | Occupancy %\n")
@@ -540,10 +577,86 @@ def main():
                         report.write(f"Daily Permits        :  {permit_counts['D']}\n")
                         report.write(f"Monthly Permits      :  {permit_counts['M']}\n")
                         report.write(f"Annual Permits       :  {permit_counts['A']}\n")
-                        report.write(f"============================================================\n")
+                        report.write(f"============================================================")
+                        report.write(f"\n\n\n")
                             
-                    print("\nOccupancy report generated and written to occupancy.txt successfully.")
+                    print("\nOccupancy report generated and appended to occupancy.txt successfully.")
 
+
+        elif admin_menu_option == "v":                                  # View All Records and Violations
+            while True:
+                print_view_records_menu()
+                view_options = ["ps", "pt", "p", "v", "b"]
+                view_option = ""
+
+                while view_option not in view_options:
+                    view_option = input("Enter selection: ").strip().lower()
+
+                    if view_option not in view_options:
+                        print("Invalid selection, please try again.")
+
+                if view_option == "b":
+                    break
+                
+                elif view_option == "ps":                                    # View Parking Spaces
+                    print("\n" + "=" * 45)
+                    print("             ALL PARKING SPACES             ")
+                    print("=" * 45)
+                    print(f"{'ID':<5} | {'Type':<10} | {'Status':<10} | {'Plate'}")
+                    print("-" * 45)
+                    
+                    for space in parking_spaces:
+                        print(f"{space[0]:<5} | {space[1]:<10} | {space[2]:<10} | {space[3]}")
+                    
+                    print("=" * 45)
+                    input("\nPress Enter to return...")
+
+                elif view_option == "pt":                                    # View Permit Types
+                    print("\n" + "=" * 35)
+                    print("          ALL PERMIT TYPES         ")
+                    print("=" * 35)
+                    print(f"{'ID':<5} | {'Type':<10} | {'Price'}")
+                    print("-" * 35)
+                    
+                    for p_type in permit_types:
+                        print(f"{p_type[0]:<5} | {p_type[1]:<10} | RM {float(p_type[2]):>7.2f}")
+                    
+                    print("=" * 35)
+                    input("\nPress Enter to return...")
+
+                elif view_option == "p":                                    # View Issued Permits
+                    print("\n" + "=" * 55)
+                    print("                 ALL ISSUED PERMITS                ")
+                    print("=" * 55)
+                    
+                    if not permits:
+                        print("No issued permits found.")
+                    else:
+                        print(f"{'Issue ID':<10} | {'Plate':<10} | {'Permit ID':<10} | {'Expiry Date'}")
+                        print("-" * 55)
+                        
+                        for p in permits:
+                            print(f"{p[0]:<10} | {p[1]:<10} | {p[2]:<10} | {p[3]}")
+                            
+                    print("=" * 55)
+                    input("\nPress Enter to return...")
+
+                elif view_option == "v":                                    # View Violations
+                    print("\n" + "=" * 70)
+                    print("                           ALL VIOLATIONS                           ")
+                    print("=" * 70)
+                    
+                    if not violations:
+                        print("No violations found.")
+                    else:
+                        print(f"{'Violation ID':<12} | {'Plate':<10} | {'Date':<10} | {'Type':<15} | {'Status'}")
+                        print("-" * 70)
+                        
+                        for v in violations:
+                            print(f"{v[0]:<12} | {v[1]:<10} | {v[2]:<10} | {v[3]:<15} | {v[4]}")
+                            
+                    print("=" * 70)
+                    input("\nPress Enter to return...")
 
 
 if __name__ == "__main__":
