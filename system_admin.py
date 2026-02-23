@@ -116,17 +116,40 @@ def permit_types_sort_key(permit):
     return (priority, id_num)
 
 def get_valid_date():
+    MONTH_DAYS = {
+    1: 31, 2: 28, 3: 31, 4: 30, 5: 31, 6: 30,
+    7: 31, 8: 31, 9: 30, 10: 31, 11: 30, 12: 31}
+
     while True:
         date_str = input("Enter date (DD-MM-YYYY) or q to cancel : ").strip()
         if date_str.lower() == "q":
             return "q"
         
         parts = date_str.split("-")
-        if len(parts) == 3 and len(parts[0]) == 2 and len(parts[1]) == 2 and len(parts[2]) == 4:   
-
-            if parts[0].isdigit() and parts[1].isdigit() and parts[2].isdigit():
-                return date_str
         
+        if len(parts) == 3 and len(parts[0]) == 2 and len(parts[1]) == 2 and len(parts[2]) == 4:   
+            if parts[0].isdigit() and parts[1].isdigit() and parts[2].isdigit():
+                
+                day = int(parts[0])
+                month = int(parts[1])
+                year = int(parts[2])
+
+                if month < 1 or month > 12:
+                    print("Invalid date. Month must be between 01 and 12.")
+                    continue
+                
+                max_days = MONTH_DAYS[month]
+                
+                if month == 2:
+                    if (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0):
+                        max_days = 29
+                
+                if day < 1 or day > max_days:
+                    print(f"Invalid date. Month {month:02d} in year {year} only has {max_days} days.")
+                    continue
+                
+                return date_str
+                
         print("Invalid format. Please use exactly DD-MM-YYYY.")
 
 def get_valid_time():
