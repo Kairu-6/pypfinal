@@ -412,6 +412,7 @@ def staff_visitors_temporary_passes():
                 print(f"Temporary permit issued for {permit_plate} is {new_issue_id}")
             else:
                 print("Error saving permit.")
+            break
 
     elif visitors_temporary_choice in ["b", "back to parking staff menu"]:
         print("Back to Parking Staff Menu.....")
@@ -669,8 +670,8 @@ def admin_edit_records_menu():                                  # Edit Parking R
                                     new_time = ""
                                     new_date = ""
                                 else:
-                                    new_time = space[4] if len(space) >= 5 and space[4] else "N/A"
-                                    new_date = space[5] if len(space) >= 6 and space[5] else "N/A"
+                                    new_time = space[4] if len(space) >= 5 and space[4] else ""
+                                    new_date = space[5] if len(space) >= 6 and space[5] else ""
 
                                 parking_spaces[update_id_number_index] = [space[0], new_type, new_status, new_plate, new_time, new_date]
                                 save_to_file(parking_spaces, "parking_spaces.txt", parking_headers)
@@ -1053,7 +1054,7 @@ def main(): # main menu
 
         elif main_menu_choice.lower() in ["s", "parking staff"]:
             staff_menu()
-            
+
         else :
             print("Quiting the program.....")
             break
