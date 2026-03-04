@@ -1,0 +1,21 @@
+Plate,Model,Color,OwnerID
+WVA1234,Toyota Vios,Silver,USR101
+BKE5566,Honda Civic,White,USR102
+QRT8899,Perodua Myvi,Blue,USR103
+PHS4433,Tesla Model 3,Black,USR104
+MNC1122,Proton X50,Red,USR105
+JJK7788,Toyota Corolla,Grey,USR106
+LPL9900,Honda City,White,USR107
+ZXC3344,Perodua Axia,Yellow,USR108
+VBN5566,Nissan Almera,Silver,USR109
+RTY1122,Toyota Hilux,Black,USR110
+DFG4455,BYD Atto 3,Grey,USR111
+GHJ7788,Proton Saga,Blue,USR112
+KLM9900,Honda HR-V,Red,USR113
+POU2233,Toyota Yaris,White,USR114
+YTR5566,Mazda 3,Silver,USR115
+REW8899,Perodua Bezza,Grey,USR116
+QWE1122,Honda Accord,Black,USR117
+ASD4455,Proton Persona,Blue,USR118
+ZXC7788,Ford Ranger,White,USR119
+MNB9900,BMW 3 Series,Black,USR120

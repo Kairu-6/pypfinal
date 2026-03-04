@@ -1,0 +1,54 @@
+
+============================================================
+PARKING SYSTEM OCCUPANCY & USAGE REPORT
+Generated on: 1212-12-12 12:12
+============================================================
+
+--- OVERALL PARKING SPACE UTILIZATION ---
+Total Parking Spaces : 20
+Occupied Spaces      : 5
+Available Spaces     :  15
+Current Capacity     : 25.0%
+
+--- UTILIZATION BY SPACE TYPE ---
+Type       | Total | Occupied | Available | Occupancy %
+------------------------------------------------------------
+Regular    |     9 |        2 |         7 |       22.2%
+Reserved   |     5 |        1 |         4 |       20.0%
+Electric   |     6 |        2 |         4 |       33.3%
+
+--- ACTIVE PERMITS SUMMARY ---
+Total Active Permits : 22
+Daily Permits        :  4
+Monthly Permits      :  10
+Annual Permits       :  8
+============================================================
+
+
+
+============================================================
+PARKING SYSTEM OCCUPANCY & USAGE REPORT
+Generated on: 1212-12-13 12:12
+============================================================
+
+--- OVERALL PARKING SPACE UTILIZATION ---
+Total Parking Spaces : 20
+Occupied Spaces      : 5
+Available Spaces     :  15
+Current Capacity     : 25.0%
+
+--- UTILIZATION BY SPACE TYPE ---
+Type       | Total | Occupied | Available | Occupancy %
+------------------------------------------------------------
+Regular    |     9 |        2 |         7 |       22.2%
+Reserved   |     5 |        1 |         4 |       20.0%
+Electric   |     6 |        2 |         4 |       33.3%
+
+--- ACTIVE PERMITS SUMMARY ---
+Total Active Permits : 22
+Daily Permits        :  4
+Monthly Permits      :  10
+Annual Permits       :  8
+============================================================
+
+
