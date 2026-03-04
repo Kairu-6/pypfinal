@@ -1,5 +1,95 @@
 from datetime import datetime
 
+# BEGIN UNIVERSAL HELPER FUNCTIONS
+
+def get_valid_date():
+    while True:
+        date_str = input("Enter date (DD/MM/YYYY) or q to cancel : ").strip()
+        
+        if date_str.lower() == "q":
+            return "q"
+        
+        date_str = date_str.replace("-", "/")
+        
+        try:
+            valid_date_object = datetime.strptime(date_str, "%d/%m/%Y")
+            standardized_date_str = valid_date_object.strftime("%Y-%m-%d")
+            
+            return standardized_date_str 
+            
+        except ValueError:
+            print("Invalid date or format. Please use exactly DD/MM/YYYY.")
+
+def load_from_file(file_name):
+    headers = []
+    data_list = []
+
+    try:
+        with open(file_name, "r") as file:
+            line = file.readline()
+            if not line:                                                # Prevents error if file is empty
+                return headers, data_list
+            headers = line.strip().split(",")
+
+            for line in file:
+                clean_line = line.strip()
+                if clean_line:                                          # Prevents error from empty lines
+                    entry = line.strip().split(",")
+                    data_list.append(entry)
+                
+            return headers, data_list
+
+    except IOError:
+        print(f"[Error] Could not read file {file_name}.")
+        return headers, data_list
+
+def get_valid_time():
+    while True:
+        time_str = input("Enter time (HH:MM) or q to cancel : ").strip()
+        if time_str.lower() == "q":
+            return "q"
+        
+        parts = time_str.split(":")
+        if len(parts) == 2 and len(parts[0]) == 2 and len(parts[1]) == 2:
+
+            if parts[0].isdigit() and parts[1].isdigit():
+
+                if 0 <= int(parts[0]) <= 23 and 0 <= int(parts[1]) <= 59:
+                    return time_str
+                else:
+                    print("Error: Please insert valid 24-hour time (00:00 - 23:59).")
+            else:
+                print("Error: Hours and minutes must be numeric.")
+        else:
+            print("Invalid format. Please use exactly HH:MM (24-hour).")
+
+def get_record(full_id, data_list):
+    target = full_id.strip().upper()
+
+    for item in data_list:
+        if item[0].upper() == target:
+            return item
+    return False
+
+def save_to_file(data_list, file_name, headers):
+    try:
+        with open(file_name, "w") as file:
+            file.write(",".join(headers) + '\n')
+            for entry in data_list:
+                file.write(",".join(entry) + '\n')
+        return True
+            
+    except IOError:
+        print(f"[Error] Could not write to file {file_name}. Please check permissions.")
+        return False
+
+def get_id_number(record, index_of_id):
+    full_id = record[index_of_id]
+    return int(full_id[1:])
+
+# END UNIVERSAL HELPER FUNCTIONS
+
+
 # BEGIN PARKING STAFF FUNCTIONS
 
 def staff_menu():
@@ -13,70 +103,67 @@ def staff_menu():
         print("[d] Daily Logs")
         print("[b] Back to Main Menu")
         print("-"*45)
-        staff_menu_choice = input("Enter your choice: ")
-        if staff_menu_choice.lower() == "p" or staff_menu_choice.lower() == "parking availability":
+
+        staff_menu_choice = input("Enter your choice: ").strip().lower()
+        if staff_menu_choice in ["p", "parking availability"]:
             staff_parking_available()
-        elif staff_menu_choice.lower() == "r" or staff_menu_choice.lower() == "vehicle record":
+        elif staff_menu_choice in ["r", "vehicle record"]:
             staff_vehicle_record_menu()
-        elif staff_menu_choice.lower() == "v" or staff_menu_choice.lower() == "visitors temporary passes":
+        elif staff_menu_choice in ["v", "visitors temporary passes"]:
             staff_visitors_temporary_passes()
-        elif staff_menu_choice.lower() == "d" or staff_menu_choice.lower() == "daily logs":
+        elif staff_menu_choice in ["d", "daily logs"]:
             staff_daily_logs()
-        elif staff_menu_choice.lower() == "b" or staff_menu_choice.lower() == "back to main menu":
-            print("Back to Main Menu.....")
+        elif staff_menu_choice in ["b", "back to main menu"]:
+            print("Returning to Main Menu...")
             return
-        else :
+        else:
             print("Invalid selection.")
 
 def staff_parking_available():
-    try:
-        while True:
-            with open('parking_spaces.txt', 'r') as file:
-                print("\n" + "=" * 45)
-                print("   AVAILABLE PARKING CHECKING ")
-                print("=" * 45)
-                print("[r] Regular")
-                print("[s] Reserved")
-                print("[e] Electric")
-                print("[b] Back to Parking Staff Menu")
-                print("-" * 45)
-                choice = input("Enter your choice: ").lower()
-                if choice == "r" or choice == "regular":
-                    target_type = "regular"
-                elif choice == "s" or choice == "reserved":
-                    target_type = "reserved"
-                elif choice == "e" or choice == "electric":
-                    target_type = "electric"
-                elif choice == "b" or choice == "back to parking staff menu":
-                    print("Back to Parking Staff Menu.....")
-                    break
-                else:
-                    print("Invalid selection.")
-                    continue
+    parking_headers, parking_spaces = load_from_file("parking_spaces.txt")
 
-                found_any = False  # This tracks if we found at least one spot
+    while True:
+        print("\n" + "=" * 45)
+        print("   AVAILABLE PARKING CHECKING ")
+        print("=" * 45)
+        print("[r] Regular")
+        print("[s] Reserved")
+        print("[e] Electric")
+        print("[b] Back to Parking Staff Menu")
+        print("-" * 45)
 
-                print(f"\nSearching for {target_type} spots...")
-                print(f"Parking space available:")
+        choice = input("Enter your choice: ").strip().lower()
+        if choice in ["r", "regular"]:
+            target_type = "regular"
+        elif choice in ["s", "reserved"]:
+            target_type = "reserved"
+        elif choice in ["e", "electric"]:
+            target_type = "electric"
+        elif choice in ["b", "back to parking staff menu"]:
+            print("Back to Parking Staff Menu.....")
+            return
+        else:
+            print("Invalid selection.")
+            continue
 
-                for line in file:
-                    parting = [p.strip() for p in line.strip().split(',')]
-                    if len(parting) < 3:
-                        continue
+        found_any = False  # This tracks if we found at least one spot
 
-                    parkingID = parting[0]
-                    parking_type = parting[1].lower()  # The 'type' from the file
-                    status = parting[2].lower()  # The 'status' from the file
+        print(f"\nSearching for available {target_type} spots...")
+        print(f"Parking space available:")
 
-                    # Check if the type matches what the user wants AND it is available
-                    if parking_type  == target_type and status == "available":
-                        print(f"{parkingID}")
-                        found_any = True
-                # Only print the error if we finished the loop and found nothing
-                if not found_any:
-                    print(f"Sorry, no {target_type} spots are available right now.")
-    except FileNotFoundError:
-        print("Error: 'parking_spaces.txt' not found.")
+        for space in parking_spaces:
+
+            parkingID = space[0]
+            parking_type = space[1].lower()  # The 'type' from the file
+            status = space[2].lower()  # The 'status' from the file
+
+            # Check if the type matches what the user wants AND it is available
+            if parking_type  == target_type and status == "available":
+                print(f"{parkingID}")
+                found_any = True
+        # Only print the error if we finished the loop and found nothing
+        if not found_any:
+            print(f"Sorry, no {target_type} spots are available right now.")
 
 def staff_vehicle_record_menu(): #entry and exit vehicle
     while True:
@@ -87,158 +174,118 @@ def staff_vehicle_record_menu(): #entry and exit vehicle
         print("[u] Update Vehicle Exit")
         print("[b] Back to Parking Staff Menu")
         print("-" * 45)
-        vehicle_record_menu_choice = input("Enter your choice: ")
-        if vehicle_record_menu_choice == "r" or vehicle_record_menu_choice.lower() == "record new vehicle entry":
+        vehicle_record_menu_choice = input("Enter your choice: ").strip().lower()
+
+        if vehicle_record_menu_choice in ["r", "record new vehicle entry"]:
             staff_vehicle_entry()
-        elif vehicle_record_menu_choice == "u" or vehicle_record_menu_choice.lower() == "update vehicle exit":
+        elif vehicle_record_menu_choice in ["u", "update vehicle exit"]:
             staff_vehicle_exit()
-        elif vehicle_record_menu_choice == "b" or vehicle_record_menu_choice.lower() == "back to parking staff menu":
+        elif vehicle_record_menu_choice in ["b", "back to parking staff menu"]:
             print("Back to Parking Staff Menu.....")
             return
         else:
             print("Invalid selection.")
 
 def staff_vehicle_entry():
-    try:
-        with open('parking_spaces.txt', 'r') as file: #read available parking slot
-            header = file.readline()
-            print("--- Parking Spaces Entry System ---")
-            print(f"SpaceID | Type")
-            spaces = []
-            space_available = []
-            for line in file:
-                parts = [p.strip() for p in line.strip().split(',')]
-                # Ensure the list has enough slots to prevent index errors
-                if len(parts) < 3:
-                    continue
+    parking_headers, parking_spaces = load_from_file("parking_spaces.txt")
 
-                spaceID = parts[0]
-                space_type = parts[1]
-                status = parts[2]
-                spaces.append([spaceID, space_type, status, *parts[3:]])
-                if status.lower() == "available":
-                    print(f"{spaceID} | {space_type}")
-                    space_available.append(spaceID)
-                # user input
-            while True:
-                entry_parking_SpaceID = input("Enter SpaceID choice: ")
-                if entry_parking_SpaceID in space_available:
-                    break
-                else:
-                    print (space_available)
-                    print("Error: invalid SpaceID. Please choose available space (e.g., S01)")
-        entry_parking_plate = input("Enter vehicle plate number: ")
-        while True:
-            vehicle_entry_time = input("Enter vehicle entry time (HH:MM): ")
-            if ":" in vehicle_entry_time:
-                parts = vehicle_entry_time.split(":")
-                if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
-                    hour, minute = int(parts[0]), int(parts[1])
-                    if 0 <= hour < 24 and 0 <= minute < 60:
-                        # Valid input
-                        break  # exit the loop
-                    else:
-                        print("Error: Please insert valid 24-hour time (00:00 - 23:59).")
-                else:
-                    print("Error: Hours and minutes must be numeric.")
-            else:
-                print("Error: Wrong time format. Please use HH:MM (e.g., 14:30).")
-        while True:
-            vehicle_entry_date = input("Enter vehicle entry date (DD/MM/YYYY): ")
-            if "/" in vehicle_entry_date:
-                break
-            else :
-                print("Error: Wrong date format. Please use DD/MM/YYYY (e.g., 12/12/2026).")
-        #doublechecking
-        updated = False
-        for i, space in enumerate(spaces):
-            if space[0] == entry_parking_SpaceID:
-                if space[2] == "Available":
-                    space[2] = "Occupied"
-                    # Ensure the list has enough slots to prevent index errors
-                    while len(space) < 6:
-                        space.append("")
+    print("\n--- Parking Spaces Entry System ---")
+    print(f"SpaceID | Type")
+    space_available = []
 
-                    #Assign values to specific indices
-                    space[3] = entry_parking_plate
-                    space[4] = vehicle_entry_time
-                    space[5] = vehicle_entry_date
+    for space in parking_spaces:
+        if len(space) >= 3 and space[2].capitalize() == "Available":
+            print(f"{space[0]} | {space[1]}")
+            space_available.append(space[0])
 
-                    updated = True
-                else:
-                    print("Error: That space is already occupied.")
-                    return
-        if updated:
-            #Write back all spaces
-            with open("parking_spaces.txt", "w") as f:
-                f.write(header)
-                for space in spaces:
-                    f.write(", ".join(space) + "\n")
-            print(f"Successfully added {entry_parking_plate} to parking space {entry_parking_SpaceID}.")
-            return
-    except FileNotFoundError:
-        print("Error: 'parking_spaces.txt' not found.")
+    if not space_available:
+        print("No parking spaces are currently available.")
+        return
+
+    while True:
+        entry_parking_SpaceID = input("Enter SpaceID choice: ").strip().upper()         # Prompts for SpaceID to occupy
+        if entry_parking_SpaceID in space_available:
+            break
+        else:
+            print(space_available)
+            print("Error: invalid SpaceID. Please choose available space (e.g., S01)")
+
+    entry_parking_plate = input("Enter vehicle plate number: ")
+
+    print("Enter vehicle entry time:")          # Gets validated entry time
+    vehicle_entry_time = get_valid_time()
+    if vehicle_entry_time == "q": return
+
+    print("Enter vehicle entry date:")          # Gets validated entry date
+    vehicle_entry_date = get_valid_date()
+    if vehicle_entry_date == "q": return
+
+    space = get_record(entry_parking_SpaceID, parking_spaces)
+    idx = parking_spaces.index(space)
+    parking_spaces[idx] = [space[0], space[1], "Occupied", entry_parking_plate, vehicle_entry_time, vehicle_entry_date]
+
+    
+    #Write back all spaces
+    save_to_file(parking_spaces, "parking_spaces.txt", parking_headers)
+    print(f"Successfully added {entry_parking_plate} to parking space {entry_parking_SpaceID}.")
 
 def staff_vehicle_exit():
+    parking_headers, parking_spaces = load_from_file("parking_spaces.txt")
+    logs_headers, parking_logs = load_from_file("parking_logs.txt")
+
     print("\n--- Parking Spaces Exit System ---")
 
     while True:
-        exit_parking_plate = input("Enter vehicle plate number: ").strip().upper()
-
-        try:
-            with open('parking_spaces.txt', 'r') as file:
-                lines = file.readlines()
-        except FileNotFoundError:
-            print("Error: parking_spaces.txt not found.")
-            return
+        exit_parking_plate = input("Enter vehicle plate number to exit: ").strip().upper()
 
         vehicle_plate_found = False
-        updated_lines = []
         target_vehicle_data = {}
 
-        for line in lines:
-            parts = [p.strip() for p in line.split(',')]
-            if len(parts) >= 6 and parts[3] == exit_parking_plate:
+        for space in parking_spaces:
+            if len(space) >= 6 and space[3] == exit_parking_plate:
+                exit_parking_index = parking_spaces.index(space)
                 vehicle_plate_found = True
                 target_vehicle_data = {
-                    'plate': parts[3],  # Added this so the log can find it!
-                    'spaceID': parts[0],
-                    'type': parts[1],
-                    'entry_time': parts[4],
-                    'entry_date': parts[5],
+                    'plate': space[3],  # Added this so the log can find it!
+                    'spaceID': space[0],
+                    'type': space[1],
+                    'entry_time': space[4],
+                    'entry_date': space[5],
                 }
-                updated_lines.append(f"{parts[0]}, {parts[1]}, Available, \n")
-            else:
-                updated_lines.append(line)
 
         if not vehicle_plate_found:
             print(f"Vehicle with plate {exit_parking_plate} not found.")
             continue
 
         # --- Time & Date Validation ---
-        while True:
-            try:
-                exit_time_str = input("Enter vehicle exit time (HH:MM): ")
-                exit_date_str = input("Enter vehicle exit date (DD/MM/YYYY): ")
+        print("\n--- Time and Date of Exit ---")
+        print("Enter vehicle exit time:")
+        exit_time_str = get_valid_time()
+        if exit_time_str == "q": return
+        
+        print("Enter vehicle exit date:")
+        exit_date_str = get_valid_date()
+        if exit_date_str == "q": return
 
-                # Convert user input strings into one single datetime object
-                end_dt = datetime.strptime(f"{exit_date_str} {exit_time_str}", "%d/%m/%Y %H:%M")
+        try:
+            # Convert user input strings into one single datetime object
+            end_dt = datetime.strptime(f"{exit_date_str} {exit_time_str}", "%Y-%m-%d %H:%M")
 
-                # Convert stored file strings into one single datetime object
-                start_dt = datetime.strptime(f"{target_vehicle_data['entry_date']} {target_vehicle_data['entry_time']}",
-                                             "%d/%m/%Y %H:%M")
+            # Convert stored file strings into one single datetime object
+            start_dt = datetime.strptime(f"{target_vehicle_data['entry_date']} {target_vehicle_data['entry_time']}", "%Y-%m-%d %H:%M")
 
-                if end_dt < start_dt:
-                    print("Error: Exit time cannot be before entry time!")
-                    continue
-                break
-            except ValueError:
-                print("Error: Invalid Format. Use HH:MM and DD/MM/YYYY.")
+            if end_dt < start_dt:
+                print("Error: Exit time cannot be before entry time!")
+                continue
+        except ValueError:
+            print("Error: Invalid Format. Use HH:MM and DD/MM/YYYY.")
+            continue
 
         # hours calculation
         difference = end_dt - start_dt
         total_hours = difference.total_seconds() / 3600
         total_hours = round(total_hours, 2)
+
         if total_hours < 0.25: #no need to pay if under 15 minutes
             rounded_fee = 0.00
         else:
@@ -250,28 +297,20 @@ def staff_vehicle_exit():
                 rate = 2.00
             else : #reserved RM3
                 rate = 3.00
-            total_fee = (total_hours * rate)
-            rounded_fee = round (total_fee, 2)
+            total_fee = total_hours * rate
+            rounded_fee = round(total_fee, 2)
 
-        # --- Logging ---
-        try:
-            with open('parking_logs.txt', 'r') as log_file:
-                log_lines = [line.strip() for line in log_file if line.strip()]
-
+        # Logging
+        if parking_logs:
                 max_id = 0
-                for line in log_lines[1:]:  # skip header
-                    parts = [p.strip() for p in line.split(',')]
-                    if len(parts) > 1 and parts[1].startswith('L'):
-                        try:
-                            current_id = int(parts[1][1:])
-                            if current_id > max_id:
-                                max_id = current_id
-                        except ValueError:
-                            continue
+                for log in parking_logs:
+                    current_id = get_id_number(log, 1)
+
+                    if current_id > max_id:
+                        max_id = current_id
 
                 log_id = f"L{max_id + 1}"
-
-        except FileNotFoundError:
+        else:
             log_id = "L101"
 
         # Now actually write to file
@@ -281,138 +320,129 @@ def staff_vehicle_exit():
                 f"{target_vehicle_data['entry_time']},{exit_time_str},{rounded_fee}\n")
             log_file.write(log_entry)
 
-        with open('parking_spaces.txt', 'w') as file:
-            file.writelines(updated_lines)
+        parking_spaces[exit_parking_index] = [space[0], space[1], "Available", "", "", ""]
+        save_to_file(parking_spaces, "parking_spaces.txt", parking_headers)
 
-        print(f"Successfully remove {target_vehicle_data['plate']} from {target_vehicle_data['spaceID']}")
+        print(f"Successfully removed {target_vehicle_data['plate']} from {target_vehicle_data['spaceID']}")
         print(f"Total fee is RM{rounded_fee} ")
         break
 
 def staff_visitors_temporary_passes():
-    try:
+    permit_headers, permit_types = load_from_file("permit_types.txt")
+    permits_headers, permits = load_from_file("permits.txt")
+
+    print("\n" + "=" * 60)
+    print("   WELCOME TO VISITOR TEMPORARY PASSES MENU   ")
+    print("=" * 60)
+    print("[i] Issue temporary passes")
+    print("[b] Back to Parking Staff Menu")
+    print("-" * 60)
+    visitors_temporary_choice = input("Enter your choice: ").strip().lower()
+
+    if visitors_temporary_choice in ["i", "issue temporary passes"]:
         while True:
-            print("\n" + "=" * 60)
-            print("   WELCOME TO VISITOR TEMPORARY PASSES MENU   ")
-            print("=" * 60)
-            print("[i] Issue temporary passes")
-            print("[b] Back to Parking Staff Menu")
-            print("-" * 60)
-            visitors_temporary_choice = input("Enter your choice: ")
-            if visitors_temporary_choice == "i" or visitors_temporary_choice.lower() == "issue temporary passes":
-                while True:
-                    print("----- Issue Temporary Passes -----")
-                    permit_plate = input("Enter permit plate number: ").strip()
-                    permitID = input("Enter permit ID: ").strip()
+            print("----- Issue Temporary Passes -----")
+            permit_plate = input("Enter permit plate number: ").strip().upper()
 
-                    # Validate permitID properly
-                    if permitID not in {'D01','A01','A02','A03','M01','M02'}:
-                        print("Invalid permitID input. Please try again.")
-                        continue
+            print("\nAvailable Permit Types:")
+            for pt in permit_types:
+                print(f"{pt[0]} - {pt[1]} : RM{pt[2]}")
+            permitID = input("\nEnter permit ID: ").strip().upper()
 
-                    # Validate date input
-                    while True:
-                        permit_expiry_date = input("Enter permit expiry date (YYYY-MM-DD): ").strip()
-                        try:
-                            permit_expiry_date = datetime.strptime(permit_expiry_date, "%Y-%m-%d").date()
-                            break
-                        except ValueError:
-                            print("Invalid date! Please enter a valid date in YYYY-MM-DD format.")
+            # Validate permitID properly
+            valid_permit = get_record(permitID, permit_types)
+            if not valid_permit:
+                print("Invalid permitID input. Please try again.")
+                continue
 
-                    with open("permits.txt", 'a+') as f:
-                        f.seek(0)
-                        permit_lines = [line.strip() for line in f if line.strip()]
+            # Validate date input
+            print("Enter permit expiry date:")
+            permit_expiry_date = get_valid_date()
+            if permit_expiry_date == "q": return
 
-                        # Determine the next IssueID in P001 format
-                        max_id = 0
-                        for line in permit_lines[1:]:  # skip header if exists
-                            parts = [p.strip() for p in line.split(',')]
-                            if len(parts) > 0 and parts[0].startswith('P'):
-                                try:
-                                    current_id = int(parts[0][1:])
-                                    if current_id > max_id:
-                                        max_id = current_id
-                                except ValueError:
-                                    continue
+            
+            # Determine the next IssueID in P001 format
+            max_id = 0
+            for p in permits:  # skip header if exists
+                if p[0].startswith('P'):
+                    try:
+                        current_id = int(p[0][1:])
+                        if current_id > max_id:
+                            max_id = current_id
+                    except ValueError:
+                        pass
 
-                        # Generate new IssueID
-                        new_issue_id = f"P{max_id + 1:03d}"  # format as P001, P002, etc.
+            # Generate new IssueID
+            new_issue_id = f"P{max_id + 1:03d}"  # format as P001, P002, etc.
+            permits.append([new_issue_id, permit_plate, permitID, permit_expiry_date])
 
-                        # Write header if file is empty
-                        if not permit_lines:
-                            f.write("IssueID,Plate,PermitID,ExpiryDate\n")
-
-                        # Write the new permit
-                        f.write(f"{new_issue_id},{permit_plate},{permitID},{permit_expiry_date}\n")
-                        print(f"Temporary permit issued for {permit_plate} is {new_issue_id}")
-            elif visitors_temporary_choice == "b" or visitors_temporary_choice.lower() == "back to parking staff menu":
-                print("Back to Parking Staff Menu.....")
-                return
+            # Write header if file is empty
+            if save_to_file(permits, "permits.txt", permits_headers):
+                print(f"Temporary permit issued for {permit_plate} is {new_issue_id}")
             else:
-                print("Invalid choice. Please try again.")
-    except FileNotFoundError:
-        print("Error: 'permits.txt' not found.")
+                print("Error saving permit.")
+
+    elif visitors_temporary_choice in ["b", "back to parking staff menu"]:
+        print("Back to Parking Staff Menu.....")
+        return
+    else:
+        print("Invalid choice. Please try again.")
 
 def staff_daily_logs():  # read daily logs
-    try:
-        while True:
-            print("\n" + "=" * 60)
-            print("   WELCOME LOG READER SYSTEM MENU   ")
-            print("=" * 60)
-            print("[a] Read Daily Logs")
-            print("[b] Back to Parking Staff Menu")
-            print("-" * 60)
-            daily_log_choice = input("Enter your choice: ")
-            if daily_log_choice == "a" or daily_log_choice.lower() == "read daily logs":
-                with open("parking_logs.txt", "r") as f:
-                    print("\n--- Parking Daily Log Reader ---")
+    while True:
+        print("\n" + "=" * 60)
+        print("   WELCOME LOG READER SYSTEM MENU   ")
+        print("=" * 60)
+        print("[a] Read Daily Logs")
+        print("[b] Back to Parking Staff Menu")
+        print("-" * 60)
+        daily_log_choice = input("Enter your choice: ")
 
-                    # Convert user input to date object
-                    while True:
-                        target_date_input = input("Enter date (DD/MM/YYYY): ")
-                        try:
-                            date_obj = datetime.strptime(target_date_input, "%d/%m/%Y").date()
-                            break  # success
-                        except ValueError:
-                            print("Error: Wrong date format. Please use DD/MM/YYYY (e.g., 02/12/2026).")
+        if daily_log_choice in ["a", "read daily logs"]:
+            log_headers, logs = load_from_file("parking_logs.txt")
 
-                    print(f"\nLog report for {target_date_input}")
-                    print("-" * 50)
+            print("\n--- Parking Daily Log Reader ---")
 
-                    found_any = False
+            # Convert user input to date object
+            print("Enter date to view logs:")
+            target_date_input = get_valid_date()
+            if target_date_input == "q": return
 
-                    for line in f:
-                        parting = [p.strip() for p in line.strip().split(',')]
-                        if len(parting) < 7:
-                            continue
+            print(f"\nLog report for {target_date_input}")
+            print("-" * 50)
 
-                        # Convert log date to date object
-                        try:
-                            log_date = datetime.strptime(parting[0], "%d/%m/%Y").date()
-                        except ValueError:
-                            continue  # skip invalid date formats in file
+            found_any = False
+            for log in logs:
+                if len(log) >= 7 and log[0] == target_date_input:
+                    logID = log[1]
+                    log_plate = log[2]
+                    log_spaceID = log[3]
+                    log_entry_time = log[4]
+                    log_exit_time = log[5]
+                    log_fee = log[6]
+                    print(f"{logID}, {log_plate}, {log_spaceID}, "
+                            f"{log_entry_time}, {log_exit_time}, RM{log_fee}")
 
-                        if log_date == date_obj:
-                            logID = parting[1]
-                            log_plate = parting[2]
-                            log_spaceID = parting[3]
-                            log_entry_time = parting[4]
-                            log_exit_time = parting[5]
-                            log_fee = parting[6]
-                            print(f"{logID}, {log_plate}, {log_spaceID}, "
-                                  f"{log_entry_time}, {log_exit_time}, RM{log_fee}")
-                            found_any = True
-                    if not found_any:
-                        print(f"Sorry, no records found for {target_date_input}.")
-            elif daily_log_choice == "b" or daily_log_choice.lower() == "back to parking staff menu":
-                print("Back to Parking Staff Menu.....")
-                return
-            else:
-                print("Error: Invalid choice. Please try again.")
-    except FileNotFoundError:
-        print("Error: 'parking_logs.txt' not found.")
+                    found_any = True
+
+            if not found_any:
+                print(f"Sorry, no records found for {target_date_input}.")
+            print("-" * 50)
+
+        elif daily_log_choice in ["b", "back to parking staff menu"]:
+            print("Back to Parking Staff Menu.....")
+            return
+        else:
+            print("Error: Invalid choice. Please try again.")
 
 # END PARKING STAFF FUNCTIONS
 
+
+# BEGIN SYSTEM ADMIN FUNCTIONS
+
+
+
+# END SYSTEM ADMIN FUNCTIONS
 
 def main(): # main menu
     while True:
