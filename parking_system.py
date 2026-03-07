@@ -1037,7 +1037,7 @@ def admin_view_records_menu():
 
 # BEGIN VEHICLE OWNER FUNCTIONS
 
-def owner_vehicle_menu(): 
+def owner_menu(): 
      while True:
         print("\n" + "="*45)
         print("   PARKING RECORD SYSTEM - VEHICLE OWNER MENU   ")
@@ -1053,11 +1053,11 @@ def owner_vehicle_menu():
             owner_register_vehicle()
         elif vehicle_menu_choice in ["s", "permit status"]:
             owner_permit_status()
-        elif vehicle_menu_choice == ["p", "request permit"]:
+        elif vehicle_menu_choice in ["p", "request permit"]:
             owner_request_permit()
-        elif vehicle_menu_choice == ["h", "parking history"]:
+        elif vehicle_menu_choice in ["h", "parking history"]:
             owner_parking_history()
-        elif vehicle_menu_choice == ["b", "back to main menu"]:
+        elif vehicle_menu_choice in ["b", "back to main menu"]:
             print("Back to Main Menu.....")
             return
         else :
@@ -1234,9 +1234,224 @@ def owner_parking_history():
 
 # BEGIN VEHICLE OWNER FUNCTIONS
 
+def officer_menu():
+    while True:
+        print("\n" + "=" * 50)
+        print("      PARKING SYSTEM - PERMIT OFFICER MENU      ")
+        print("=" * 50)
+        print("[i] Issue New Parking Permit")
+        print("[v] View All Permit Status")
+        print("[u] Update / Renew / Cancel Permit")
+        print("[s] System Statistics & Reports")
+        print("[b] Back to Main Menu")
+        print("-" * 50)
+        
+        choice = input("Enter your selection: ").lower().strip()
+        
+        if choice == 'i':
+            officer_issue_new_permit()
+        elif choice == 'v':
+            officer_view_permit_status()
+        elif choice == 'u':
+            officer_manage_existing_records()
+        elif choice == 's':
+            officer_system_statistics()
+        elif choice == 'b':
+            print("Logging out Permit Officer...")
+            break
+        else:
+            print(">> Invalid input. Please select i, v, u, s, or b.")
 
+def officer_issue_new_permit():
+    print("\n" + "=" * 50)
+    print("          [i] ISSUE NEW PARKING PERMIT          ")
+    print("=" * 50)
+    
+    plate = input("Enter Vehicle Plate: ").upper().strip()
+    if not plate:
+        print(">> Error: Plate number is required.")
+        return
+
+    print("\nAvailable Types:")
+    print("-" * 35)
+    print(f"{'ID':<8} | {'Category':<12} | {'Price'}")
+    print("-" * 35)
+
+    pt_headers, permit_types = load_from_file("permit_types.txt")
+    if not pt_headers:
+        print("Critical Error: 'permit_types.txt' missing.")
+        return
+    
+    for p_type in permit_types:
+        if len(p_type) >= 3:
+            p_id = p_type[0]
+            p_cat = p_type[1]
+            p_price = p_type[2]
+            print(f"{p_id:<8} | {p_cat:<12} | RM{p_price}")
+    print("-" * 35)
+
+    p_choice = input("Select Permit ID: ").upper().strip()
+
+    selected_type = get_record(p_choice, permit_types)
+    if not selected_type:
+        print(">> Error: Invalid Permit Type selected.")
+        return
+    price = selected_type[2]
+
+    print("Set Expiry Date:")
+    exp_date_str = get_valid_date()
+    if exp_date_str == "q": 
+        return
+  
+    print(f"\nConfirm Issuance for {plate}?")
+    print(f"Total Charge: RM{price}")
+    confirm = input("Proceed? (y/n): ").lower()
+
+    if confirm == 'y':
+        p_headers, permits = load_from_file("permits.txt")
+        if not permits:
+            new_id = "P001"
+        else:
+            last_id = permits[-1][0]
+            if last_id.startswith("P"):
+                try:
+                    next_num = int(last_id[1:]) + 1
+                    new_id = f"P{next_num:03d}"
+                except ValueError:
+                    new_id = "P001"
+            else:
+                new_id = "P001"
+        permits.append([new_id, plate, p_choice, exp_date_str])
+        save_to_file(permits, "permits.txt", p_headers)
+        
+        print(f"\n>>> SUCCESS: Permit {new_id} is now ACTIVE.")
+    else:
+        print("\n>>> Transaction cancelled.")
+    
+    input("\nPress Enter to return...")
+
+def officer_view_permit_status():
+    today = datetime.now().date()
+    
+    print("\n" + "=" * 80)
+    print(f"                PERMIT STATUS REPORT (TODAY: {today})")
+    print("=" * 80)
+    print(f"{'Issue ID':<10} | {'Plate':<12} | {'Type':<8} | {'Expiry Date':<15} | {'Status'}")
+    print("-" * 80)
+
+    p_headers, permits = load_from_file("permits.txt")
+
+    if not permits:
+        print("No permits found in database.")
+
+    else:
+        for parts in permits:
+            if len(parts) < 4:
+                continue
+                
+            p_id, plate, p_type, exp_str = parts[0], parts[1], parts[2], parts[3]
+            
+            try:
+                exp_date = datetime.strptime(exp_str, "%Y-%m-%d").date()
+                status = "ACTIVE" if exp_date >= today else "EXPIRED"
+            except ValueError:
+                status = "ERROR"
+                exp_str = "Invalid Format"
+
+            print(f"{p_id:<10} | {plate:<12} | {p_type:<8} | {exp_str:<15} | {status}")
+
+    print("=" * 80)
+    input("\nPress Enter to return...")
+
+def officer_manage_existing_records():
+    print("\n" + "=" * 50)
+    print("          [u] UPDATE / RENEW / DELETE          ")
+    print("=" * 50)
+    target = input("Enter Permit ID to modify: ").upper().strip()
+
+    p_headers, permits = load_from_file("permits.txt")
+    
+    found_record = None
+    found = False
+    
+    if not p_headers:
+        return
+
+    for p in permits:
+        if p[0] == target:
+            found_record = p
+            found = True
+            break
+
+    if found == True:
+        idx = permits.index(found_record)
+
+        print(f"\nRECORD FOUND: {found_record[1]} (Type: {found_record[2]})")
+        print("-" * 30)
+        print("[1] Renew Permit (New Expiry)")
+        print("[2] Correct Plate Number")
+        print("[3] Cancel (Delete) Permit")
+        print("[4] Back")
+
+        choice = input("\nAction: ")
+
+        if choice == '1':
+            print("Enter New Expiry Date:")
+            new_date = get_valid_date()
+            if new_date != "q":
+                permits[idx][3] = new_date
+                print(">> Record Renewed.")
+        elif choice == '2':
+            permits[idx][1] = input("Enter New Plate: ").upper().strip()
+            print(">> Plate Updated.")
+        elif choice == '3':
+            confirm = input("Confirm Delete? (y/n): ").lower()
+            if confirm == 'y':
+                permits.remove(found_record)
+                print(f">> Permit {target} Deleted.")
+        else:
+            print(">> No changes applied.")
+
+        save_to_file(permits, "permits.txt", p_headers)
+        
+    else:
+        print(">> Error: ID not found.")
+        
+    input("\nPress Enter to return...")
+
+def officer_system_statistics():
+    print("\n" + "=" * 50)
+    print("          PERMIT SYSTEM ANALYTICS          ")
+    print("=" * 50)
+    
+    active, expired, total = 0, 0, 0
+    today = datetime.now().date()
+    
+    p_headers, permits = load_from_file("permits.txt")
+
+    
+    for parts in permits:
+        if len(parts) >= 4:
+            try:
+                exp_date = datetime.strptime(parts[3], "%Y-%m-%d").date()
+                if exp_date >= today: active += 1
+                else: expired += 1
+                total += 1
+            except ValueError:
+                continue 
+
+    print(f"Total Permit Records: {total}")
+    print(f"Active Permits:      {active}")
+    print(f"Expired Permits:     {expired}")
+    if total > 0:
+        rate = (active / total) * 100
+        print(f"System Health Rate:  {rate:.1f}%")
+        
+    print("=" * 50)
+    input("\nPress Enter to return...")
 
 # END SYSTEM ADMIN FUNCTIONS
+
 
 def main(): # main menu
     while True:
@@ -1259,7 +1474,10 @@ def main(): # main menu
             staff_menu()
 
         elif main_menu_choice in ["v", "vehicle owner"]:
-            owner_vehicle_menu()
+            owner_menu()
+
+        elif main_menu_choice in ["o", "permit officer"]:
+            officer_menu()
 
         elif main_menu_choice in ["q", "quit the program"]:
             print("Quiting the program.....")
