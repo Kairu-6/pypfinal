@@ -1035,6 +1035,209 @@ def admin_view_records_menu():
 # END SYSTEM ADMIN FUNCTIONS
 
 
+# BEGIN VEHICLE OWNER FUNCTIONS
+
+def owner_vehicle_menu(): 
+     while True:
+        print("\n" + "="*45)
+        print("   PARKING RECORD SYSTEM - VEHICLE OWNER MENU   ")
+        print("="*45)
+        print("[r] Register Vehicle")
+        print("[s] Permit Status")
+        print("[p] Request Permit")
+        print("[h] Parking History")
+        print("[b] Back to Main Menu")
+        print("-"*45)
+        vehicle_menu_choice = input("Enter your choice: ").lower().strip()
+        if vehicle_menu_choice in ["r", "register vehicle"]:
+            owner_register_vehicle()
+        elif vehicle_menu_choice in ["s", "permit status"]:
+            owner_permit_status()
+        elif vehicle_menu_choice == ["p", "request permit"]:
+            owner_request_permit()
+        elif vehicle_menu_choice == ["h", "parking history"]:
+            owner_parking_history()
+        elif vehicle_menu_choice == ["b", "back to main menu"]:
+            print("Back to Main Menu.....")
+            return
+        else :
+            print("Invalid selection.")
+
+def owner_register_vehicle():
+    print("\n" + "="*45)
+    print("   VEHICLE REGISTRATION   ")
+    print("="*45)
+    plate = input("Enter a plate number: ")
+    model = input("Enter car model: ")
+    color = input("Enter car color: ")
+
+    if not plate or not model or not color:
+        print("Error: All fields are required!")
+        return
+    
+    vehicle_headers, vehicles = load_from_file("vehicles.txt")
+
+    count = 0
+    with open ("vehicles.txt","r") as file:
+        for vehicle in vehicles:
+            count += 1
+            if len(vehicle) > 1 and vehicle[0] == plate:
+                print("Error: This vehicle is already registered.")
+                return
+            
+    new_id = f"USR{100 + count + 1}"
+    new_record = [plate,model,color,new_id]
+
+    vehicles.append(new_record)
+    if save_to_file(vehicles, "vehicles.txt", vehicle_headers):
+        print("Vehicle registered succesfully!")
+
+def owner_permit_status():
+    print("\n" + "="*45)
+    print("      VIEW PERMIT STATUS       ")
+    print("="*45)
+    user_plate = input("Enter your plate number: ").strip().upper()    
+
+    permits_headers, permits = load_from_file("permits.txt")
+
+    permit_info = None
+    for data in permits:
+        if len(data) >= 4 and data[1] == user_plate:
+            permit_info = data
+            break
+        
+    if not permit_info:
+        print("No active permit found for this plate.")
+        return 
+
+    pt_headers, permit_types = load_from_file("permit_types.txt")
+    p_type_name = "Unknown"
+    
+    type_data = get_record(permit_info[2], permit_types) # looks for the right permit type 
+    if type_data:
+        p_type_name = type_data[1]
+
+        privileges = "General Parking"
+        if permit_info[2] == "D01": 
+            privileges = "Regular"
+        elif permit_info[2] == "M01": 
+            privileges = "Regular"
+        elif permit_info[2] == "M02": 
+            privileges = "Electric or Reserved"
+        elif permit_info[2] == "A01": 
+            privileges = "Electric"
+        elif permit_info[2] == "A02": 
+            privileges = "Reserved"
+        else:  
+            privileges = "Electric or Reserved"
+
+    
+        print("-" * 30)
+        print(f"Permit Type: {p_type_name} ({permit_info[2]})")
+        print(f"Expiration:  {permit_info[3]}")
+        print(f"Privileges:  {privileges}")
+        print("-" * 30)
+
+def owner_request_permit():
+    print("\n" + "="*45)
+    print("      REQUEST NEW PERMIT       ")
+    print("="*45)
+    user_plate = input("Enter your plate number: ").strip().upper()
+    if not user_plate:
+        print("Error: Plate number cannot be empty")
+        return 
+    
+    while True:
+        permit_request_date = input("Enter permit request date (DD/MM/YYYY): ")
+        parts = permit_request_date.split('/')
+        if len(parts) == 3:
+            try:
+                day = int(parts[0])
+                month = int(parts[1])
+                year = int(parts[2])
+                if 1 <= day <= 31 and 1 <= month <= 12: # Basic validation
+                    break
+                else:
+                    print("Error: Invalid Day/Month.")
+            except ValueError:
+                print("Error: Date must be numbers.")
+        else:
+            print("Error: Use format DD/MM/YYYY.")
+        
+    print("Permit types : Daily(D01)")
+    print("               Monthly(M01,M02)")
+    print("               Annual(A01,A02,A03)")
+    permit_type = input("Enter permit type (e.g, DO1): ").strip().upper()
+    
+    if permit_type.startswith("A"):
+            year += 1
+    elif permit_type.startswith("M"):
+            month += 1
+            if month > 12:
+                month = 1
+                year += 1
+    else: # Daily 
+            day += 1
+            if day > 31:
+                day = 1
+                month +=1
+                if month > 12:
+                    month = 1
+                    year += 1
+    expiry_date = f"{year}-{month:02d}-{day:02d}"
+        
+    permit_count = 0
+
+    permits_headers, permits = load_from_file("permits.txt")
+    for permit_data in permits:
+        permit_count += 1
+        if len(permit_data) > 1 and permit_data[1] == user_plate:
+            print("Error: This permit is already registered.")
+            return
+        
+    new_permit_id = f"P{ permit_count + 1:03d}"
+    new_permit_record = [new_permit_id,user_plate,permit_type,expiry_date]
+
+    requests_headers, requests = load_from_file("requests.txt")
+    requests.append(new_permit_record)
+    if save_to_file(requests, "requests.txt", requests_headers):
+        print("Permit submitted succesfully!")
+
+def owner_parking_history():
+    print("\n" + "="*45)
+    print("         VIEW PARKING HISTORY          ")
+    print("="*45)
+    
+    user_plate = input("Enter your plate number: ").strip().upper()
+    if not user_plate:
+        print("Error: Plate number cannot be empty.") 
+        return
+    
+    log_headers, logs = load_from_file("parking_logs.txt")
+
+    found = False
+    print(f"\nRecords for {user_plate}:")
+    print(f"{'Space ID':<10} | {'Entry Time':<20} | {'Exit Time':<20}")
+    print("-" * 55)
+    
+    for info in logs:
+        # Check for match 
+        if len(info) >= 4 and info[2] == user_plate:
+            print(f"{info[3]:<10} | {info[4]:<20} | {info[5]:<20}")
+            found = True
+    
+    if not found:
+        print("No parking records found for this vehicle.")
+
+# END SYSTEM ADMIN FUNCTIONS
+
+
+# BEGIN VEHICLE OWNER FUNCTIONS
+
+
+
+# END SYSTEM ADMIN FUNCTIONS
+
 def main(): # main menu
     while True:
         print("\n" + "="*60)
@@ -1047,17 +1250,23 @@ def main(): # main menu
         print("[q] Quit the Program")
         print("-"*60)
 
-        main_menu_choice = input("Enter your choice: ")
+        main_menu_choice = input("Enter your choice: ").lower().strip()
 
-        if main_menu_choice.lower() in ["a", "system administrator"]:
+        if main_menu_choice in ["a", "system administrator"]:
             admin_menu()
 
-        elif main_menu_choice.lower() in ["s", "parking staff"]:
+        elif main_menu_choice in ["s", "parking staff"]:
             staff_menu()
 
-        else :
+        elif main_menu_choice in ["v", "vehicle owner"]:
+            owner_vehicle_menu()
+
+        elif main_menu_choice in ["q", "quit the program"]:
             print("Quiting the program.....")
             break
+
+        else :
+            print("Invalid option, please try again.")
 
 if __name__ == "__main__":
     main()

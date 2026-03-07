@@ -10,7 +10,7 @@ S08,Reserved,Available,,,
 S09,Reserved,Occupied,JJK7788,12:00,2026-02-16
 S10,Reserved,Available,,,
 S11,Electric,Occupied,PHS4433,15:30,2026-02-15
-S12,Electric,Available,,N/A,N/A
+S12,Electric,Available,,,
 S13,Electric,Available,,,
 S14,Electric,Occupied,DFG4455,07:45,2026-02-15
 S15,Electric,Available,,,

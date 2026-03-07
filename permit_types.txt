@@ -1,6 +1,7 @@
 PermitID,Type,Price
 D01,Daily,10.00
 D02,Daily,5.00
+D03,Daily,250.00
 M01,Monthly,150.00
 M02,Monthly,200.00
 A01,Annual,1500.00
