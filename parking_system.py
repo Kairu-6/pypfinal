@@ -635,7 +635,7 @@ def admin_edit_records_menu():                                  # Edit Parking R
                         correct_format = -1
 
                         while correct_format == -1:
-                            new_parking_details = input(f'\nInsert new details for parking space {space[0]} in the format of type/status/plate(blank if none), or q to cancel: ')
+                            new_parking_details = input(f'\nInsert new details for parking space {space[0]} in the format of type/status/plate(blank if none), or q to cancel: ').strip()
                             
                             if new_parking_details == "q": 
                                 break
@@ -1198,9 +1198,9 @@ def owner_request_permit():
     new_permit_id = f"P{ permit_count + 1:03d}"
     new_permit_record = [new_permit_id,user_plate,permit_type,expiry_date]
 
-    requests_headers, requests = load_from_file("requests.txt")
+    requests_headers, requests = load_from_file("permit_requests.txt")
     requests.append(new_permit_record)
-    if save_to_file(requests, "requests.txt", requests_headers):
+    if save_to_file(requests, "permit_requests.txt", requests_headers):
         print("Permit submitted succesfully!")
 
 def owner_parking_history():

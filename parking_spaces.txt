@@ -18,4 +18,4 @@ S16,Regular,Available,,,
 S17,Regular,Available,,,
 S18,Regular,Available,,,
 S19,Reserved,Available,,,
-S20,Electric,Available,,,
+S20,Electric,Occupied,axx122,08:28,2026-03-08
