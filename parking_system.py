@@ -1147,44 +1147,15 @@ def owner_request_permit():
         print("Error: Plate number cannot be empty")
         return 
     
-    while True:
-        permit_request_date = input("Enter permit request date (DD/MM/YYYY): ")
-        parts = permit_request_date.split('/')
-        if len(parts) == 3:
-            try:
-                day = int(parts[0])
-                month = int(parts[1])
-                year = int(parts[2])
-                if 1 <= day <= 31 and 1 <= month <= 12: # Basic validation
-                    break
-                else:
-                    print("Error: Invalid Day/Month.")
-            except ValueError:
-                print("Error: Date must be numbers.")
-        else:
-            print("Error: Use format DD/MM/YYYY.")
+    expiry_date = get_valid_date()
         
+    if expiry_date == "q":
+        return
+
     print("Permit types : Daily(D01)")
     print("               Monthly(M01,M02)")
     print("               Annual(A01,A02,A03)")
     permit_type = input("Enter permit type (e.g, DO1): ").strip().upper()
-    
-    if permit_type.startswith("A"):
-            year += 1
-    elif permit_type.startswith("M"):
-            month += 1
-            if month > 12:
-                month = 1
-                year += 1
-    else: # Daily 
-            day += 1
-            if day > 31:
-                day = 1
-                month +=1
-                if month > 12:
-                    month = 1
-                    year += 1
-    expiry_date = f"{year}-{month:02d}-{day:02d}"
         
     permit_count = 0
 
@@ -1229,10 +1200,10 @@ def owner_parking_history():
     if not found:
         print("No parking records found for this vehicle.")
 
-# END SYSTEM ADMIN FUNCTIONS
+# END VEHICLE OWNER FUNCTIONS
 
 
-# BEGIN VEHICLE OWNER FUNCTIONS
+# BEGIN PERMIT OFFICER FUNCTIONS
 
 def officer_menu():
     while True:
@@ -1450,7 +1421,7 @@ def officer_system_statistics():
     print("=" * 50)
     input("\nPress Enter to return...")
 
-# END SYSTEM ADMIN FUNCTIONS
+# END PERMIT OFFICER FUNCTIONS
 
 
 def main(): # main menu
